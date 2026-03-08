@@ -59,7 +59,9 @@ export function MobileTerminal(props: MobileTerminalProps) {
 
     const [activeTab, setActiveTab] = React.useState<MobileTab>(initialTab);
     const [inspectorOpen, setInspectorOpen] = React.useState(false);
+    const [inspectorDragY, setInspectorDragY] = React.useState(0);
     const [showMobileWelcome, setShowMobileWelcome] = React.useState(false);
+    const inspectorTouchStartYRef = React.useRef<number | null>(null);
     const topbarFocused = props.onboardingOpen && props.focusTarget === "TOPBAR";
     const chainFocused = props.onboardingOpen && props.focusTarget === "CHAIN";
     const analysisFocused = props.onboardingOpen && props.focusTarget === "ANALYSIS";
@@ -76,6 +78,22 @@ export function MobileTerminal(props: MobileTerminalProps) {
             setInspectorOpen(false);
         }
     }, [props.selectedKey]);
+
+    React.useEffect(() => {
+        if (!inspectorOpen) return;
+        if (activeTab !== "CHAIN") {
+            setInspectorOpen(false);
+            setInspectorDragY(0);
+        }
+    }, [activeTab, inspectorOpen]);
+
+    React.useEffect(() => {
+        if (!inspectorOpen) return;
+        if (props.onboardingOpen && props.focusTarget !== "CHAIN") {
+            setInspectorOpen(false);
+            setInspectorDragY(0);
+        }
+    }, [props.onboardingOpen, props.focusTarget, inspectorOpen]);
 
     React.useEffect(() => {
         setShowMobileWelcome(props.mobileWelcomePending);
@@ -109,6 +127,34 @@ export function MobileTerminal(props: MobileTerminalProps) {
         }
         props.onMobileWelcomeDismissed();
     };
+
+    const closeInspector = React.useCallback(() => {
+        setInspectorOpen(false);
+        setInspectorDragY(0);
+        inspectorTouchStartYRef.current = null;
+    }, []);
+
+    const handleInspectorTouchStart = React.useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+        inspectorTouchStartYRef.current = event.touches[0]?.clientY ?? null;
+        setInspectorDragY(0);
+    }, []);
+
+    const handleInspectorTouchMove = React.useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+        const startY = inspectorTouchStartYRef.current;
+        if (startY == null) return;
+        const nextY = event.touches[0]?.clientY ?? startY;
+        const delta = nextY - startY;
+        setInspectorDragY(delta > 0 ? delta : 0);
+    }, []);
+
+    const handleInspectorTouchEnd = React.useCallback(() => {
+        if (inspectorDragY > 90) {
+            closeInspector();
+            return;
+        }
+        setInspectorDragY(0);
+        inspectorTouchStartYRef.current = null;
+    }, [closeInspector, inspectorDragY]);
 
     return (
         <div className="flex flex-col h-full w-full bg-[#060a10] text-[#c0ccd8] overflow-hidden">
@@ -188,20 +234,20 @@ export function MobileTerminal(props: MobileTerminalProps) {
             <div className={`fixed inset-0 z-[100] flex flex-col justify-end transition-opacity duration-300 ${inspectorOpen && selectedRow ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
                 <div
                     className="absolute inset-0 bg-[#000000]/60 backdrop-blur-sm"
-                    onClick={() => {
-                        setInspectorOpen(false);
-                        if (props.selectedKey && props.selectedSide) {
-                            props.onSelect(props.selectedKey, props.selectedSide);
-                        }
-                    }}
+                    onClick={closeInspector}
                 />
-                <div className={`relative bg-[#0d1117] w-full h-[85vh] rounded-t-xl overflow-hidden flex flex-col shadow-2xl transform transition-transform duration-300 ${inspectorOpen && selectedRow ? "translate-y-0" : "translate-y-full"}`}>
-                    <div className="w-full flex justify-center pt-3 pb-1 shrink-0 bg-[#0d1117] cursor-pointer" onClick={() => {
-                        setInspectorOpen(false);
-                        if (props.selectedKey && props.selectedSide) {
-                            props.onSelect(props.selectedKey, props.selectedSide);
-                        }
-                    }}>
+                <div
+                    className={`relative bg-[#0d1117] w-full h-[85vh] rounded-t-xl overflow-hidden flex flex-col shadow-2xl transform transition-transform ${inspectorDragY > 0 ? "duration-0" : "duration-300"}`}
+                    style={{ transform: inspectorOpen && selectedRow ? `translateY(${inspectorDragY}px)` : "translateY(100%)" }}
+                >
+                    <div
+                        className="w-full flex justify-center pt-3 pb-1 shrink-0 bg-[#0d1117] cursor-pointer touch-pan-y"
+                        onClick={closeInspector}
+                        onTouchStart={handleInspectorTouchStart}
+                        onTouchMove={handleInspectorTouchMove}
+                        onTouchEnd={handleInspectorTouchEnd}
+                        onTouchCancel={handleInspectorTouchEnd}
+                    >
                         <div className="h-1.5 bg-[#2a3547] rounded-full w-12" />
                     </div>
                     <div className="flex-1 overflow-hidden flex flex-col bg-[#0d1117]">
