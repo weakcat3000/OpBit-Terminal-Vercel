@@ -1633,6 +1633,8 @@ export default function TerminalPage() {
                     arbOpen={arbDrawerOpen}
                     onOpenArb={() => setArbDrawerOpen(true)}
                     onCloseArb={() => setArbDrawerOpen(false)}
+                    onboardingOpen={onboardingOpen}
+                    highlightAtmStrikeRow={onboardingOpen && onboardingCurrentStep.id === "chain"}
                     focusTarget={focusTarget}
                     onFocusTargetChange={triggerFocusTarget}
                 />

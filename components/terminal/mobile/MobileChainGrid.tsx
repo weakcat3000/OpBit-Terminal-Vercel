@@ -28,6 +28,7 @@ interface MobileChainGridProps {
     viewMode: "COMPARE" | "BEST";
     executionSide: ExecutionSide;
     loading?: boolean;
+    highlightAtmStrikeRow?: boolean;
 }
 
 function finiteOrNull(value: number | null | undefined): number | null {
@@ -93,6 +94,7 @@ function MobileRow({
     selectedSide,
     onSelect,
     isAtm,
+    highlightAtmStrike,
     viewMode
 }: {
     strike: number;
@@ -105,6 +107,7 @@ function MobileRow({
     selectedSide: "C" | "P" | null;
     onSelect: (key: string, side: "C" | "P") => void;
     isAtm: boolean;
+    highlightAtmStrike: boolean;
     viewMode: "COMPARE" | "BEST";
 }) {
     const defaultVenue = venues[0] || "DERIBIT";
@@ -154,6 +157,8 @@ function MobileRow({
 
     const isCallSelected = call?.contractKey === selectedKey && selectedSide === "C";
     const isPutSelected = put?.contractKey === selectedKey && selectedSide === "P";
+    const isStrikeSelected = isCallSelected || isPutSelected;
+    const isGuidedStrike = highlightAtmStrike && isAtm;
     const callBidFlash = usePriceFlash(callMerged.bid);
     const callAskFlash = usePriceFlash(callMerged.ask);
     const putBidFlash = usePriceFlash(putMerged.bid);
@@ -192,7 +197,7 @@ function MobileRow({
     }, [putPrimaryVenue, putHasQuote, viewMode]);
 
     return (
-        <div className={`flex items-stretch border-b border-[#0d1520] hover:bg-[#0d1520] min-h-[44px] ${isAtm ? "bg-[#0a1829]/50" : ""}`}>
+        <div className={`flex items-stretch border-b border-[#0d1520] hover:bg-[#0d1520] min-h-[44px] ${isGuidedStrike ? "relative z-[1] ring-2 ring-[#47b5ff] bg-[#10243a]/80 shadow-[0_0_20px_rgba(71,181,255,0.32)]" : isAtm ? "bg-[#0a1829]/50" : ""}`}>
             {/* CALLS */}
             <div
                 className={`flex-1 flex flex-col justify-center px-2 border-r border-[#1e2a3a] cursor-pointer ${isCallSelected ? "bg-[#1a2a4a]" : ""}`}
@@ -259,7 +264,14 @@ function MobileRow({
             </div>
 
             {/* STRIKE */}
-            <div className={`w-[80px] shrink-0 flex items-center justify-center font-mono font-bold text-[13px] border-r border-[#1e2a3a] ${isAtm ? "text-[#47b5ff] border-x border-[#47b5ff]" : "text-[#e0e8f0] bg-[#0a1018]"}`}>
+            <div className={`w-[80px] shrink-0 flex items-center justify-center font-mono font-bold text-[13px] ${isGuidedStrike
+                ? "border-x border-[#47b5ff] text-[#8fd6ff] bg-[#0f2438]"
+                : isStrikeSelected
+                    ? "border-x border-[#2f6ea9] text-[#7cc6ff] bg-[#112338]"
+                    : isAtm
+                        ? "border-r border-[#47b5ff] text-[#47b5ff] bg-[#0c1929]"
+                        : "border-r border-[#1e2a3a] text-[#e0e8f0] bg-[#0a1018]"
+                }`}>
                 {strike.toLocaleString()}
             </div>
 
@@ -343,7 +355,8 @@ export function MobileChainGrid({
     selectedExpiry,
     onSelectExpiry,
     viewMode,
-    loading
+    loading,
+    highlightAtmStrikeRow = false
 }: MobileChainGridProps) {
     const calls = rows.filter((r) => r.right === "C");
     const puts = rows.filter((r) => r.right === "P");
@@ -402,6 +415,7 @@ export function MobileChainGrid({
                             selectedSide={selectedSide}
                             onSelect={onSelect}
                             isAtm={strike === atmStrike}
+                            highlightAtmStrike={highlightAtmStrikeRow}
                             viewMode={viewMode}
                         />
                     ))

@@ -9,9 +9,10 @@ interface MobileBottomNavProps {
     activeTab: MobileTab;
     onChangeTab: (tab: MobileTab) => void;
     onAssistantToggle: () => void;
+    assistantHighlighted?: boolean;
 }
 
-export function MobileBottomNav({ activeTab, onChangeTab, onAssistantToggle }: MobileBottomNavProps) {
+export function MobileBottomNav({ activeTab, onChangeTab, onAssistantToggle, assistantHighlighted = false }: MobileBottomNavProps) {
     return (
         <div className="flex items-center justify-between px-2 pb-5 pt-2 border-t border-[#1e2a3a] bg-[#0d1117] shrink-0 w-full z-10">
             <button
@@ -44,7 +45,9 @@ export function MobileBottomNav({ activeTab, onChangeTab, onAssistantToggle }: M
             </button>
             <button
                 onClick={onAssistantToggle}
-                className="flex-1 flex flex-col items-center gap-1 text-[#47b5ff]"
+                className={`flex-1 flex flex-col items-center gap-1 text-[#47b5ff] transition-all ${
+                    assistantHighlighted ? "ring-2 ring-[#47b5ff] rounded-sm bg-[#0f2238] shadow-[0_0_24px_rgba(71,181,255,0.45)] py-1" : ""
+                }`}
             >
                 <div>
                     <Image

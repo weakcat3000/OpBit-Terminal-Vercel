@@ -42,6 +42,8 @@ export interface MobileTerminalProps {
     arbOpen: boolean;
     onOpenArb: () => void;
     onCloseArb: () => void;
+    onboardingOpen: boolean;
+    highlightAtmStrikeRow?: boolean;
     focusTarget: "TOPBAR" | "CHAIN" | "ANALYSIS" | "STRATEGY" | "ASSISTANT" | null;
     onFocusTargetChange: (target: "TOPBAR" | "CHAIN" | "ANALYSIS" | "STRATEGY" | "ASSISTANT" | null) => void;
 }
@@ -56,6 +58,12 @@ export function MobileTerminal(props: MobileTerminalProps) {
     const [activeTab, setActiveTab] = React.useState<MobileTab>(initialTab);
     const [inspectorOpen, setInspectorOpen] = React.useState(false);
     const [showMobileWelcome, setShowMobileWelcome] = React.useState(false);
+    const topbarFocused = props.onboardingOpen && props.focusTarget === "TOPBAR";
+    const chainFocused = props.onboardingOpen && props.focusTarget === "CHAIN";
+    const analysisFocused = props.onboardingOpen && props.focusTarget === "ANALYSIS";
+    const strategyFocused = props.onboardingOpen && props.focusTarget === "STRATEGY";
+    const assistantFocused = props.onboardingOpen && props.focusTarget === "ASSISTANT";
+    const shouldShowMobileWelcome = showMobileWelcome && !props.onboardingOpen;
 
     const selectedRow = props.chainRows.find(r => r.contractKey === props.selectedKey) || null;
 
@@ -68,6 +76,11 @@ export function MobileTerminal(props: MobileTerminalProps) {
     }, [props.selectedKey]);
 
     React.useEffect(() => {
+        if (props.onboardingOpen) {
+            setShowMobileWelcome(false);
+            return;
+        }
+
         try {
             const seenKey = "opbit_mobile_welcome_seen";
             const seen = window.sessionStorage.getItem(seenKey);
@@ -77,7 +90,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
         } catch {
             setShowMobileWelcome(true);
         }
-    }, []);
+    }, [props.onboardingOpen]);
 
     // Sync external focusTarget changes to activeTab (e.g. from Ask AI)
     React.useEffect(() => {
@@ -95,17 +108,19 @@ export function MobileTerminal(props: MobileTerminalProps) {
 
     return (
         <div className="flex flex-col h-full w-full bg-[#060a10] text-[#c0ccd8] overflow-hidden">
-            <MobileTopBar
-                underlying={props.underlying}
-                onUnderlyingChange={props.onUnderlyingChange}
-                venues={props.venues}
-                onVenueToggle={props.onVenueToggle}
-                viewMode={props.viewMode}
-                onViewModeChange={props.onViewModeChange}
-            />
+            <div className={`relative transition-all ${topbarFocused ? "z-[97] ring-4 ring-[#47b5ff] shadow-[0_0_28px_rgba(71,181,255,0.52)] onboarding-halo-border" : ""}`}>
+                <MobileTopBar
+                    underlying={props.underlying}
+                    onUnderlyingChange={props.onUnderlyingChange}
+                    venues={props.venues}
+                    onVenueToggle={props.onVenueToggle}
+                    viewMode={props.viewMode}
+                    onViewModeChange={props.onViewModeChange}
+                />
+            </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative">
-                <div className={`h-full w-full ${activeTab === "CHAIN" ? "block" : "hidden"}`}>
+                <div className={`relative h-full w-full transition-all ${chainFocused ? "z-[97] ring-4 ring-[#47b5ff] shadow-[0_0_28px_rgba(71,181,255,0.52)] onboarding-halo-border" : ""} ${activeTab === "CHAIN" ? "block" : "hidden"}`}>
                     <MobileChainGrid
                         rows={props.chainRows}
                         venues={props.chainVenues}
@@ -120,10 +135,11 @@ export function MobileTerminal(props: MobileTerminalProps) {
                         onSelectExpiry={props.onSelectExpiry}
                         viewMode={props.viewMode}
                         loading={props.chainLoading}
+                        highlightAtmStrikeRow={props.highlightAtmStrikeRow}
                     />
                 </div>
 
-                <div className={`h-full w-full p-2 flex flex-col gap-2 ${activeTab === "CHARTS" ? "flex" : "hidden"}`}>
+                <div className={`relative h-full w-full p-2 flex flex-col gap-2 transition-all ${analysisFocused ? "z-[97] ring-4 ring-[#47b5ff] shadow-[0_0_28px_rgba(71,181,255,0.52)] onboarding-halo-border" : ""} ${activeTab === "CHARTS" ? "flex" : "hidden"}`}>
                     <VolSurfaceWidget
                         fairData={props.fairData}
                         fairLoading={props.fairLoading}
@@ -138,7 +154,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
                     />
                 </div>
 
-                <div className={`h-full w-full flex justify-end ${activeTab === "STRATEGY" ? "flex" : "hidden"}`}>
+                <div className={`relative h-full w-full flex justify-end transition-all ${strategyFocused ? "z-[97] ring-4 ring-[#47b5ff] shadow-[0_0_28px_rgba(71,181,255,0.52)] onboarding-halo-border" : ""} ${activeTab === "STRATEGY" ? "flex" : "hidden"}`}>
                     <StrategyDrawer
                         rows={props.chainRows}
                         underlying={props.underlying}
@@ -155,11 +171,14 @@ export function MobileTerminal(props: MobileTerminalProps) {
                 </div>
             </div>
 
-            <MobileBottomNav
-                activeTab={activeTab}
-                onChangeTab={handleChangeTab}
-                onAssistantToggle={props.onAssistantToggle}
-            />
+            <div className={`relative transition-all ${assistantFocused ? "z-[97]" : ""}`}>
+                <MobileBottomNav
+                    activeTab={activeTab}
+                    onChangeTab={handleChangeTab}
+                    onAssistantToggle={props.onAssistantToggle}
+                    assistantHighlighted={assistantFocused}
+                />
+            </div>
 
             {/* Contract Inspector Bottom Sheet */}
             <div className={`fixed inset-0 z-[100] flex flex-col justify-end transition-opacity duration-300 ${inspectorOpen && selectedRow ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
@@ -195,7 +214,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
             </div>
 
             {/* Mobile welcome popout */}
-            <div className={`fixed inset-0 z-[120] flex items-center justify-center px-4 transition-opacity duration-200 ${showMobileWelcome ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} role="dialog" aria-modal="true" aria-label="Mobile experience notice">
+            <div className={`fixed inset-0 z-[120] flex items-center justify-center px-4 transition-opacity duration-200 ${shouldShowMobileWelcome ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} role="dialog" aria-modal="true" aria-label="Mobile experience notice">
                 <div
                     className="absolute inset-0 bg-[#000000]/70 backdrop-blur-[2px]"
                     onClick={() => {
