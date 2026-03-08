@@ -26,7 +26,7 @@ export interface OnboardingStep {
 
 function resolveMobilePlacement(stepId: string, fallback: OnboardingStep["cardPlacement"]): OnboardingStep["cardPlacement"] {
     if (stepId === "welcome") return "center";
-    if (stepId === "topbar") return "top-center";
+    if (stepId === "topbar") return "top-center-low";
     if (stepId === "chain") return "top-center";
     if (stepId === "assistant") return "top-center";
     return fallback ?? "bottom-center";
@@ -119,7 +119,7 @@ export function OnboardingTour({
             : placement === "top-center"
                 ? "top-4 left-1/2 -translate-x-1/2"
                 : placement === "top-center-low"
-                    ? "top-[4.5rem] left-1/2 -translate-x-1/2"
+                    ? "top-[calc(env(safe-area-inset-top)+7rem)] left-1/2 -translate-x-1/2"
                 : placement === "bottom-center"
                     ? "bottom-[max(28px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
                 : placement === "middle-right"
