@@ -67,7 +67,7 @@ function renderInlineMarkdown(line: string, themeMode: "dark" | "light"): React.
             return (
                 <code
                     key={`code-${index}`}
-                    className={`rounded px-1 py-[1px] font-mono text-[10px] ${themeMode === "light"
+                    className={`rounded px-1 py-[1px] font-mono text-[11px] ${themeMode === "light"
                         ? "bg-[#dbeafe] text-[#1e3a5f]"
                         : "bg-[#12243b] text-[#9fd6ff]"
                         }`}
@@ -246,13 +246,13 @@ export function AssistantPanel({
                 <header className={`relative z-[3] border-b px-4 py-3 ${themeMode === "light" ? "border-[#8eb2d4]" : "border-[#24476f]"}`}>
                     <div className="flex items-center justify-between">
                         <div>
-                            <div className={`text-[11px] uppercase tracking-[0.22em] ${themeMode === "light" ? "text-[#1f67ad]" : "text-[#6bb8ff] drop-shadow-[0_0_8px_rgba(107,184,255,0.7)]"}`}>OpBit AI</div>
-                            <div className={`text-[10px] font-mono ${themeMode === "light" ? "text-[#0f172a]" : "text-[#8aa9c7]"}`}>Neural Terminal Assistant</div>
+                            <div className={`text-[12px] uppercase tracking-[0.22em] ${themeMode === "light" ? "text-[#1f67ad]" : "text-[#6bb8ff] drop-shadow-[0_0_8px_rgba(107,184,255,0.7)]"}`}>OpBit AI</div>
+                            <div className={`text-[11px] font-mono ${themeMode === "light" ? "text-[#0f172a]" : "text-[#8aa9c7]"}`}>Neural Terminal Assistant</div>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
-                            className={`rounded-sm border px-2 py-1 text-[10px] font-mono ${themeMode === "light"
+                            className={`rounded-sm border px-2 py-1 text-[11px] font-mono ${themeMode === "light"
                                     ? "border-[#7ea8cf] bg-[#e9f3ff] text-[#1f67ad] hover:border-[#3f7fbe] hover:text-[#124d85]"
                                     : "border-[#2b4f7c] bg-[#091427] text-[#8ebee6] hover:border-[#47b5ff] hover:text-white"
                                 }`}
@@ -267,7 +267,7 @@ export function AssistantPanel({
                                 key={chip}
                                 type="button"
                                 onClick={() => void sendMessage(chip)}
-                                className={`rounded-sm border px-2 py-1 text-[10px] font-mono ${themeMode === "light"
+                                className={`rounded-sm border px-2 py-1 text-[11px] font-mono ${themeMode === "light"
                                         ? "border-[#7ea8cf] bg-[#e9f3ff] text-[#1f67ad] shadow-[0_0_8px_rgba(97,145,194,0.2)] hover:border-[#3f7fbe] hover:text-[#124d85]"
                                         : "border-[#2b4f7c] bg-[#0c1b31] text-[#9fd6ff] shadow-[0_0_10px_rgba(71,181,255,0.14)] hover:border-[#47b5ff]"
                                     }`}
@@ -286,7 +286,7 @@ export function AssistantPanel({
                         {messages.map((message) => (
                             <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                                 <div
-                                    className={`mx-1 max-w-[92%] rounded-sm border px-2.5 py-2 text-[11px] leading-relaxed ${message.role === "user"
+                                    className={`mx-1 max-w-[92%] rounded-sm border px-2.5 py-2 text-[12px] leading-relaxed ${message.role === "user"
                                             ? themeMode === "light"
                                                 ? "border-[#6f9fca] bg-[#dbeafe] text-[#0f172a] shadow-[0_0_10px_rgba(97,145,194,0.16)]"
                                                 : "border-[#2f6ea9] bg-[#123158] text-[#e6f4ff] shadow-[0_0_12px_rgba(47,110,169,0.2)]"
@@ -305,7 +305,7 @@ export function AssistantPanel({
                                         />
                                     )}
                                     {message.role === "assistant" && (
-                                        <div className={`mb-1.5 text-[9px] uppercase tracking-[0.12em] ${themeMode === "light" ? "text-[#1f67ad]" : "text-[#86c8ff]"}`}>
+                                        <div className={`mb-1.5 text-[10px] uppercase tracking-[0.12em] ${themeMode === "light" ? "text-[#1f67ad]" : "text-[#86c8ff]"}`}>
                                             <span>OpBit AI</span>
                                         </div>
                                     )}
@@ -327,7 +327,7 @@ export function AssistantPanel({
                                     {message.warnings.length > 0 && (
                                         <div className="mt-2 space-y-1">
                                             {message.warnings.map((warning, index) => (
-                                                <div key={`${message.id}-warn-${index}`} className={`text-[9px] ${themeMode === "light" ? "text-[#b45309]" : "text-[#f5be6f]"}`}>
+                                                <div key={`${message.id}-warn-${index}`} className={`text-[10px] ${themeMode === "light" ? "text-[#b45309]" : "text-[#f5be6f]"}`}>
                                                     Warning: {warning}
                                                 </div>
                                             ))}
@@ -339,7 +339,7 @@ export function AssistantPanel({
 
                         {loading && (
                             <div className="flex justify-start">
-                                <div className={`rounded-sm border px-2.5 py-2 text-[10px] font-mono min-w-[140px] ${themeMode === "light"
+                                <div className={`rounded-sm border px-2.5 py-2 text-[11px] font-mono min-w-[140px] ${themeMode === "light"
                                         ? "border-[#6f9fca] bg-[#eef4ff] text-[#1f4f80]"
                                         : "border-[#24476f] bg-[#0a1628] text-[#7fa5ca]"
                                     }`}>
@@ -377,13 +377,13 @@ export function AssistantPanel({
                             value={input}
                             onChange={(event) => setInput(event.target.value)}
                             placeholder="Ask about OpBit, IV, Greeks, or /strategy..."
-                            className={`w-full bg-transparent text-[11px] outline-none ${themeMode === "light" ? "text-[#0f172a] placeholder:text-[#1f67ad]" : "text-[#d6e7f7] placeholder:text-[#53708c]"
+                            className={`w-full bg-transparent text-[12px] outline-none ${themeMode === "light" ? "text-[#0f172a] placeholder:text-[#1f67ad]" : "text-[#d6e7f7] placeholder:text-[#53708c]"
                                 }`}
                         />
                         <button
                             type="submit"
                             disabled={!canSend}
-                            className={`rounded-sm border px-2 py-1 text-[10px] font-mono disabled:opacity-50 ${themeMode === "light"
+                            className={`rounded-sm border px-2 py-1 text-[11px] font-mono disabled:opacity-50 ${themeMode === "light"
                                     ? "border-[#3f7fbe] bg-[#dbeafe] text-[#124d85]"
                                     : "border-[#2f6ea9] bg-[#10355f] text-[#cde8ff]"
                                 }`}

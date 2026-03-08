@@ -435,7 +435,7 @@ export function AssistantActionButtons({ actions, onRunAction, onActionExecuted,
                             setRunningIndex(null);
                         }
                     }}
-                    className={`group relative overflow-hidden rounded-sm border px-2 py-1 text-[10px] font-mono transition-all cursor-pointer disabled:cursor-wait ${
+                    className={`group relative overflow-hidden rounded-sm border px-2 py-1 text-[11px] font-mono transition-all cursor-pointer disabled:cursor-wait ${
                         themeMode === "light"
                             ? "border-[#78a6d1] bg-[#e8f2ff] text-[#1f4f80] shadow-[0_0_8px_rgba(63,118,177,0.18)] hover:border-[#3f7fbe] hover:text-[#163e68]"
                             : "border-[#2b4f7c] bg-[#0a1728] text-[#9dd4ff] shadow-[0_0_10px_rgba(56,130,206,0.18)] hover:border-[#47b5ff] hover:text-white"
@@ -450,7 +450,7 @@ export function AssistantActionButtons({ actions, onRunAction, onActionExecuted,
                 </button>
             ))}
             {lastResult && runningIndex == null && (
-                <div className={`self-center text-[9px] font-mono ${
+                <div className={`self-center text-[10px] font-mono ${
                     lastResult.ok
                         ? "text-[#00a765]"
                         : themeMode === "light"
