@@ -6,9 +6,10 @@ interface ExpiryTabsProps {
     expiries: string[];
     selected: string | null;
     onSelect: (expiry: string) => void;
+    rightInsetClassName?: string;
 }
 
-export function ExpiryTabs({ expiries, selected, onSelect }: ExpiryTabsProps) {
+export function ExpiryTabs({ expiries, selected, onSelect, rightInsetClassName = "" }: ExpiryTabsProps) {
     if (expiries.length === 0) {
         return (
             <div className="px-2 py-1 text-[10px] text-[#4a5a6a]">
@@ -18,7 +19,7 @@ export function ExpiryTabs({ expiries, selected, onSelect }: ExpiryTabsProps) {
     }
 
     return (
-        <div className="expiry-tabs flex items-center gap-0.5 px-2 py-1 bg-[#070b12] border-b border-[#1e2a3a] overflow-x-auto">
+        <div className={`expiry-tabs w-full flex items-center gap-0.5 px-2 py-1 bg-[#070b12] border-b border-[#1e2a3a] overflow-x-auto ${rightInsetClassName}`}>
             <span className="expiry-tabs-label text-[10px] text-[#4a5a6a] uppercase tracking-wider mr-2 flex-shrink-0">
                 Expiry:
             </span>

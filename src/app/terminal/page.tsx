@@ -233,7 +233,7 @@ const ONBOARDING_STEPS: OnboardingStepConfig[] = [
         title: "Options Chain",
         body: "This table is where you browse contracts. First pick a date, then pick a price level. Click the highlighted at-the-money row to select a contract before moving to the next step.",
         focusTarget: "CHAIN",
-        cardPlacement: "middle-right-inset",
+        cardPlacement: "middle-right",
         cardSize: "compact",
     },
     {

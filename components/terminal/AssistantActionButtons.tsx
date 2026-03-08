@@ -15,6 +15,7 @@ interface AssistantActionButtonsProps {
         | Promise<boolean | { ok: boolean; focusTarget?: FocusTarget }>;
     onActionExecuted?: (result: { ok: boolean; focusTarget?: FocusTarget }) => void;
     themeMode: "dark" | "light";
+    attentionPulse?: boolean;
 }
 
 interface CustomStrategyAction {
@@ -308,7 +309,13 @@ function actionLabel(action: RenderAction): string {
     }
 }
 
-export function AssistantActionButtons({ actions, onRunAction, onActionExecuted, themeMode }: AssistantActionButtonsProps) {
+export function AssistantActionButtons({
+    actions,
+    onRunAction,
+    onActionExecuted,
+    themeMode,
+    attentionPulse = false,
+}: AssistantActionButtonsProps) {
     const [runningIndex, setRunningIndex] = useState<number | null>(null);
     const [lastResult, setLastResult] = useState<null | { index: number; ok: boolean }>(null);
     const uniqueActions = useMemo(() => {
@@ -439,7 +446,7 @@ export function AssistantActionButtons({ actions, onRunAction, onActionExecuted,
                         themeMode === "light"
                             ? "border-[#78a6d1] bg-[#e8f2ff] text-[#1f4f80] shadow-[0_0_8px_rgba(63,118,177,0.18)] hover:border-[#3f7fbe] hover:text-[#163e68]"
                             : "border-[#2b4f7c] bg-[#0a1728] text-[#9dd4ff] shadow-[0_0_10px_rgba(56,130,206,0.18)] hover:border-[#47b5ff] hover:text-white"
-                    }`}
+                    } ${attentionPulse ? "assistant-action-attention" : ""}`}
                     aria-label={actionLabel(action)}
                     disabled={runningIndex === index}
                 >

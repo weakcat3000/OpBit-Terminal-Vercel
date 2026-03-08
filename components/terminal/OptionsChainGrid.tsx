@@ -871,7 +871,7 @@ export function OptionsChainGrid({
     return (
         <div className="relative h-full">
             {viewMode === "BEST" && (
-                <div className="absolute top-1.5 right-2 z-40">
+                <div className="absolute top-0 right-3 z-40">
                     <ExecutionToggle executionSide={executionSide} onExecutionSideChange={onExecutionSideChange} />
                 </div>
             )}
@@ -892,7 +892,12 @@ export function OptionsChainGrid({
                     <tr className="bg-[#070b12]">
                         <th colSpan={viewMode === "BEST" ? 15 : 13} className="p-0 border-none font-normal text-left">
                             <div className="flex items-center justify-start">
-                                <ExpiryTabs expiries={expiries} selected={selectedExpiry} onSelect={onSelectExpiry} />
+                                <ExpiryTabs
+                                    expiries={expiries}
+                                    selected={selectedExpiry}
+                                    onSelect={onSelectExpiry}
+                                    rightInsetClassName={viewMode === "BEST" ? "pr-28" : ""}
+                                />
                             </div>
                         </th>
                     </tr>

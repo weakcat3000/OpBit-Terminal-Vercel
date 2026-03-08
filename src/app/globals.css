@@ -640,3 +640,44 @@ html[data-theme-mode="light"] .terminal-shell .news-scroll::-webkit-scrollbar-th
   }
 }
 
+@keyframes opbit-assistant-action-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: saturate(1) brightness(1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: saturate(1.2) brightness(1.1);
+  }
+}
+
+@keyframes opbit-assistant-action-halo {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(71, 181, 255, 0),
+      0 0 0 1px rgba(71, 181, 255, 0.42),
+      0 0 12px rgba(71, 181, 255, 0.28);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(71, 181, 255, 0.08),
+      0 0 0 1px rgba(71, 181, 255, 0.86),
+      0 0 24px rgba(71, 181, 255, 0.52);
+  }
+}
+
+.assistant-action-attention {
+  animation:
+    opbit-assistant-action-pulse 760ms cubic-bezier(0.22, 1, 0.36, 1) 2,
+    opbit-assistant-action-halo 760ms ease-out 2;
+  will-change: transform, filter, box-shadow;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-action-attention {
+    animation: opbit-assistant-action-halo 900ms ease-out 1;
+  }
+}
+

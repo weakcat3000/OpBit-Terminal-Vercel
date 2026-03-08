@@ -125,7 +125,7 @@ export function StrategyDrawer({
                     <button
                         type="button"
                         onClick={handleOpenStrategy}
-                        className="group relative h-full w-full flex items-center justify-center bg-gradient-to-b from-[#0d1b2d] to-[#081323] hover:from-[#10233a] hover:to-[#0a1a2e] transition-colors border-b border-[#1e2a3a]"
+                        className="group relative h-full w-full flex items-center justify-center bg-gradient-to-b from-[#0d1b2d] to-[#081323] hover:from-[#10233a] hover:to-[#0a1a2e] transition-colors border-b border-[#1e2a3a] shadow-[inset_0_0_0_1px_rgba(71,181,255,0.14),0_0_10px_rgba(71,181,255,0.12)] hover:shadow-[inset_0_0_0_1px_rgba(71,181,255,0.26),0_0_14px_rgba(71,181,255,0.2)]"
                         title="Open Options Strategy Builder (S)"
                     >
                         <span className="absolute top-2 text-[8px] font-mono uppercase tracking-[0.2em] text-[#6c8fb1] group-hover:text-[#8db4db]">
@@ -145,7 +145,7 @@ export function StrategyDrawer({
                     <button
                         type="button"
                         onClick={handleOpenArb}
-                        className="group relative h-full w-full flex items-center justify-center bg-gradient-to-b from-[#0d1b2d] to-[#081323] hover:from-[#10233a] hover:to-[#0a1a2e] transition-colors"
+                        className="group relative h-full w-full flex items-center justify-center bg-gradient-to-b from-[#0d1b2d] to-[#081323] hover:from-[#10233a] hover:to-[#0a1a2e] transition-colors shadow-[inset_0_0_0_1px_rgba(71,181,255,0.14),0_0_10px_rgba(71,181,255,0.12)] hover:shadow-[inset_0_0_0_1px_rgba(71,181,255,0.26),0_0_14px_rgba(71,181,255,0.2)]"
                         title="Open Arbitrage Scanner"
                     >
                         <span className="absolute top-2 text-[8px] font-mono uppercase tracking-[0.2em] text-[#6c8fb1] group-hover:text-[#8db4db]">

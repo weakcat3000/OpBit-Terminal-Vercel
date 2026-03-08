@@ -31,6 +31,7 @@ interface TranscriptMessage {
 }
 
 const QUICK_CHIPS = ["/help", "/onboard", "/strategy"];
+const ASSISTANT_ACTION_HINT_SEEN_KEY_PREFIX = "opbit_assistant_action_hint_seen_v3";
 
 function renderInlineMarkdown(line: string, themeMode: "dark" | "light"): React.ReactNode[] {
     const parts = line.split(/(`[^`]+`|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_)/g);
@@ -114,6 +115,7 @@ export function AssistantPanel({
 }: AssistantPanelProps) {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showInitialActionHint, setShowInitialActionHint] = useState(false);
     const [messages, setMessages] = useState<TranscriptMessage[]>(() => [
         {
             id: makeId("assistant"),
@@ -134,11 +136,41 @@ export function AssistantPanel({
 
     const scrollerRef = useRef<HTMLDivElement | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
+    const firstOpenHintHandledRef = useRef(false);
 
     useEffect(() => {
         if (isOpen) {
             inputRef.current?.focus();
         }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || firstOpenHintHandledRef.current) return;
+
+        const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches;
+        const seenKey = `${ASSISTANT_ACTION_HINT_SEEN_KEY_PREFIX}_${isMobileViewport ? "mobile" : "desktop"}`;
+        let shouldAnimate = true;
+        try {
+            shouldAnimate = window.localStorage.getItem(seenKey) !== "1";
+            window.localStorage.setItem(seenKey, "1");
+        } catch {
+            // Ignore storage issues; still animate once per mount.
+        }
+
+        firstOpenHintHandledRef.current = true;
+        if (!shouldAnimate) return;
+
+        const startTimer = window.setTimeout(() => setShowInitialActionHint(true), 180);
+        const stopTimer = window.setTimeout(() => setShowInitialActionHint(false), 2700);
+        return () => {
+            window.clearTimeout(startTimer);
+            window.clearTimeout(stopTimer);
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen) return;
+        setShowInitialActionHint(false);
     }, [isOpen]);
 
     useEffect(() => {
@@ -316,6 +348,7 @@ export function AssistantPanel({
                                             actions={message.actions}
                                             onRunAction={onRunAction}
                                             themeMode={themeMode}
+                                            attentionPulse={showInitialActionHint && message.id === messages[0]?.id}
                                             onActionExecuted={(result) => {
                                                 if (result.ok) {
                                                     onMinimizeRequest?.(result.focusTarget ?? null);

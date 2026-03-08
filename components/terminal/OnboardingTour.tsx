@@ -110,12 +110,16 @@ export function OnboardingTour({
     const current = steps[currentIndex] ?? steps[0];
     const isFirst = currentIndex === 0;
     const isLast = currentIndex >= steps.length - 1;
-    const placement = isMobileViewport
+    const basePlacement = isMobileViewport
         ? resolveMobilePlacement(current.id, current.cardPlacement)
         : current.cardPlacement ?? "bottom-left";
+    const chainContractSelected = isMobileViewport && current.id === "chain" && !nextDisabled;
+    const placement = chainContractSelected ? "bottom-center" : basePlacement;
     const size = isMobileViewport ? "compact" : current.cardSize ?? "regular";
     const mobileBottomOffsetClass =
-        current.id === "analysis"
+        chainContractSelected
+            ? "bottom-[calc(env(safe-area-inset-bottom)+6.5rem)]"
+            : current.id === "analysis"
             ? "bottom-[calc(env(safe-area-inset-bottom)+8.25rem)]"
             : current.id === "assistant"
                 ? "bottom-[calc(env(safe-area-inset-bottom)+6.25rem)]"
