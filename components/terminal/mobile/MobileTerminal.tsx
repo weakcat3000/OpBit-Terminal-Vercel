@@ -55,6 +55,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
 
     const [activeTab, setActiveTab] = React.useState<MobileTab>(initialTab);
     const [inspectorOpen, setInspectorOpen] = React.useState(false);
+    const [showMobileWelcome, setShowMobileWelcome] = React.useState(false);
 
     const selectedRow = props.chainRows.find(r => r.contractKey === props.selectedKey) || null;
 
@@ -65,6 +66,18 @@ export function MobileTerminal(props: MobileTerminalProps) {
             setInspectorOpen(false);
         }
     }, [props.selectedKey]);
+
+    React.useEffect(() => {
+        try {
+            const seenKey = "opbit_mobile_welcome_seen";
+            const seen = window.sessionStorage.getItem(seenKey);
+            if (!seen) {
+                setShowMobileWelcome(true);
+            }
+        } catch {
+            setShowMobileWelcome(true);
+        }
+    }, []);
 
     // Sync external focusTarget changes to activeTab (e.g. from Ask AI)
     React.useEffect(() => {
@@ -177,6 +190,44 @@ export function MobileTerminal(props: MobileTerminalProps) {
                             liveChartSpots={props.liveChartSpots}
                             themeMode={props.themeMode}
                         />
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile welcome popout */}
+            <div className={`fixed inset-0 z-[120] flex items-center justify-center px-4 transition-opacity duration-200 ${showMobileWelcome ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} role="dialog" aria-modal="true" aria-label="Mobile experience notice">
+                <div
+                    className="absolute inset-0 bg-[#000000]/70 backdrop-blur-[2px]"
+                    onClick={() => {
+                        setShowMobileWelcome(false);
+                        try {
+                            window.sessionStorage.setItem("opbit_mobile_welcome_seen", "1");
+                        } catch {
+                            // Ignore storage failures and continue.
+                        }
+                    }}
+                />
+                <div className="relative w-full max-w-[420px] rounded-lg border border-[#2a4a6a] bg-[#0d1117] px-4 py-4 shadow-[0_0_30px_rgba(71,181,255,0.18)]">
+                    <div className="text-[11px] uppercase tracking-widest font-mono text-[#47b5ff]">Mobile Notice</div>
+                    <div className="mt-2 text-[16px] font-semibold text-[#e2e8f0]">Looks like you are viewing on mobile.</div>
+                    <p className="mt-2 text-[13px] leading-relaxed text-[#9fb0c2]">
+                        OpBit has live options comparison, strategy analytics, and assistant workflows. It is best viewed on desktop for the full experience.
+                    </p>
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowMobileWelcome(false);
+                                try {
+                                    window.sessionStorage.setItem("opbit_mobile_welcome_seen", "1");
+                                } catch {
+                                    // Ignore storage failures and continue.
+                                }
+                            }}
+                            className="rounded-sm border border-[#2f6ea9] bg-[#0d2642] px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider text-[#b9ddff] transition-colors hover:bg-[#113053] hover:border-[#3f81bf]"
+                        >
+                            Continue On Mobile
+                        </button>
                     </div>
                 </div>
             </div>
