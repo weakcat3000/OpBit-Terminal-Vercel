@@ -1,0 +1,39 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI chat icon">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff4b5f"/>
+      <stop offset="100%" stop-color="#ff2f45"/>
+    </linearGradient>
+    <linearGradient id="earGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3ea5e6"/>
+      <stop offset="100%" stop-color="#1f7fdd"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="22" y="190" width="468" height="320" rx="130" fill="url(#bodyGrad)"/>
+
+  <rect x="0" y="310" width="92" height="95" rx="34" fill="url(#earGrad)"/>
+  <rect x="420" y="310" width="92" height="95" rx="34" fill="url(#earGrad)"/>
+
+  <path d="M58 315C58 200 152 108 267 108c76 0 143 42 179 104" fill="none" stroke="#cfcfcf" stroke-width="16" stroke-linecap="round"/>
+  <line x1="246" y1="125" x2="246" y2="210" stroke="#bdbdbd" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="246" cy="111" r="23" fill="#ff3448"/>
+  <circle cx="235" cy="100" r="8" fill="#ff7e8a"/>
+
+  <rect x="112" y="268" width="264" height="156" rx="46" fill="#dfdfdf"/>
+  <rect x="112" y="268" width="264" height="58" rx="30" fill="#cdcdcd"/>
+
+  <circle cx="186" cy="331" r="24" fill="#f68b22"/>
+  <path d="M186 307a24 24 0 0 1 0 48a24 24 0 0 0 0-48z" fill="#f36f1b"/>
+  <circle cx="327" cy="331" r="24" fill="#f68b22"/>
+  <path d="M327 307a24 24 0 0 1 0 48a24 24 0 0 0 0-48z" fill="#f36f1b"/>
+
+  <path d="M228 384c11 12 28 12 40 0" fill="none" stroke="#8d8d8d" stroke-width="12" stroke-linecap="round"/>
+
+  <g transform="translate(352,70)">
+    <path d="M0 20c0-11 9-20 20-20h84c30 0 54 24 54 54v29c0 30-24 54-54 54H50L8 156v-24C3 123 0 116 0 108V20z" fill="#e7c78f"/>
+    <rect x="36" y="48" width="84" height="16" rx="8" fill="#9c9c9c"/>
+    <rect x="36" y="84" width="104" height="16" rx="8" fill="#9c9c9c"/>
+    <circle cx="116" cy="20" r="20" fill="#f0cc90"/>
+  </g>
+</svg>
