@@ -28,7 +28,8 @@ function resolveMobilePlacement(stepId: string, fallback: OnboardingStep["cardPl
     if (stepId === "welcome") return "center";
     if (stepId === "topbar") return "top-center-low";
     if (stepId === "chain") return "top-center";
-    if (stepId === "assistant") return "top-center";
+    if (stepId === "analysis") return "bottom-center";
+    if (stepId === "assistant") return "bottom-center";
     return fallback ?? "bottom-center";
 }
 
@@ -113,6 +114,12 @@ export function OnboardingTour({
         ? resolveMobilePlacement(current.id, current.cardPlacement)
         : current.cardPlacement ?? "bottom-left";
     const size = isMobileViewport ? "compact" : current.cardSize ?? "regular";
+    const mobileBottomOffsetClass =
+        current.id === "analysis"
+            ? "bottom-[calc(env(safe-area-inset-bottom)+8.25rem)]"
+            : current.id === "assistant"
+                ? "bottom-[calc(env(safe-area-inset-bottom)+6.25rem)]"
+                : "bottom-[max(28px,env(safe-area-inset-bottom))]";
     const cardPlacementClass =
         placement === "center" || placement === "middle-center"
             ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -121,7 +128,7 @@ export function OnboardingTour({
                 : placement === "top-center-low"
                     ? "top-[calc(env(safe-area-inset-top)+7rem)] left-1/2 -translate-x-1/2"
                 : placement === "bottom-center"
-                    ? "bottom-[max(28px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
+                    ? `${mobileBottomOffsetClass} left-1/2 -translate-x-1/2`
                 : placement === "middle-right"
                     ? "top-1/2 right-4 -translate-y-1/2"
                     : placement === "middle-right-inset"
@@ -138,7 +145,7 @@ export function OnboardingTour({
                             ? "bottom-4 right-4"
                             : "bottom-4 left-4";
     const cardSizeClass = size === "compact" ? "w-[min(92vw,420px)]" : "w-[min(86vw,360px)]";
-    const bodyTextClass = size === "compact" ? "text-[10px] leading-relaxed" : "text-[12px] leading-relaxed";
+    const bodyTextClass = size === "compact" ? "text-[11px] leading-relaxed" : "text-[13px] leading-relaxed";
     const cardAnimation = isFirst
         ? "opbit-onboarding-enter 420ms cubic-bezier(0.22,1,0.36,1) both, opbit-onboarding-float 4.2s ease-in-out 450ms infinite"
         : "opbit-onboarding-enter 260ms cubic-bezier(0.22,1,0.36,1) both";
@@ -171,7 +178,7 @@ export function OnboardingTour({
                 <div className={`text-[10px] font-mono uppercase tracking-[0.14em] ${themeMode === "light" ? "text-[#1f67ad]" : "text-[#6bb8ff]"}`}>
                     First-Time Walkthrough
                 </div>
-                <div className="mt-1 text-[15px] font-semibold leading-tight">
+                <div className="mt-1 text-[16px] font-semibold leading-tight">
                     {renderBrandMentions(current.title, themeMode, "title")}
                 </div>
                 {current.id === "welcome" && (
