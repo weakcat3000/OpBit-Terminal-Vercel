@@ -26,7 +26,7 @@ export interface OnboardingStep {
 
 function resolveMobilePlacement(stepId: string, fallback: OnboardingStep["cardPlacement"]): OnboardingStep["cardPlacement"] {
     if (stepId === "welcome") return "center";
-    if (stepId === "topbar") return "top-center-low";
+    if (stepId === "topbar") return "top-center";
     if (stepId === "chain") return "top-center";
     if (stepId === "assistant") return "top-center";
     return fallback ?? "bottom-center";
@@ -145,22 +145,24 @@ export function OnboardingTour({
     const strategyFocusStep = current.id === "strategy";
 
     return (
-        <div className="fixed inset-0 z-[96] pointer-events-none">
-            <div
-                className={`absolute inset-0 ${
-                    themeMode === "light"
-                        ? strategyFocusStep
-                            ? "bg-[rgba(18,41,71,0.56)]"
-                            : "bg-[rgba(18,41,71,0.44)]"
-                        : strategyFocusStep
-                            ? "bg-[rgba(2,7,14,0.74)]"
-                            : "bg-[rgba(2,7,14,0.66)]"
-                }`}
-            />
+        <>
+            <div className="fixed inset-0 z-[96] pointer-events-none">
+                <div
+                    className={`absolute inset-0 ${
+                        themeMode === "light"
+                            ? strategyFocusStep
+                                ? "bg-[rgba(18,41,71,0.56)]"
+                                : "bg-[rgba(18,41,71,0.44)]"
+                            : strategyFocusStep
+                                ? "bg-[rgba(2,7,14,0.74)]"
+                                : "bg-[rgba(2,7,14,0.66)]"
+                    }`}
+                />
+            </div>
             <aside
                 key={current.id}
                 style={{ animation: cardAnimation }}
-                className={`pointer-events-auto absolute ${cardPlacementClass} ${cardSizeClass} rounded-sm border px-4 py-3 max-h-[min(62dvh,520px)] overflow-y-auto ${
+                className={`pointer-events-auto fixed z-[110] ${cardPlacementClass} ${cardSizeClass} rounded-sm border px-4 py-3 max-h-[min(62dvh,520px)] overflow-y-auto ${
                     themeMode === "light"
                         ? "border-[#7ea8cf] bg-[#f4f8ff]/96 text-[#0f172a] shadow-[0_10px_40px_rgba(76,127,179,0.28)]"
                         : "border-[#2b4f7c] bg-[#071428]/94 text-[#d6e7f7] shadow-[0_10px_40px_rgba(28,88,153,0.36)]"
@@ -270,6 +272,6 @@ export function OnboardingTour({
                     </div>
                 )}
             </aside>
-        </div>
+        </>
     );
 }
