@@ -95,6 +95,11 @@ export function MobileTerminal(props: MobileTerminalProps) {
         else if (tab === "CHAIN") props.onFocusTargetChange("CHAIN");
     };
 
+    const handleSelectContract = (key: string, side: "C" | "P") => {
+        props.onSelect(key, side);
+        setInspectorOpen(true);
+    };
+
     const dismissMobileWelcome = () => {
         setShowMobileWelcome(false);
         try {
@@ -127,7 +132,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
                         executionSide={props.executionSide}
                         selectedKey={props.selectedKey}
                         selectedSide={props.selectedSide}
-                        onSelect={props.onSelect}
+                        onSelect={handleSelectContract}
                         themeMode={props.themeMode}
                         expiries={props.expiries}
                         selectedExpiry={props.selectedExpiry}

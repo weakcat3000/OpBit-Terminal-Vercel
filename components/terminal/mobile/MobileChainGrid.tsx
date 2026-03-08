@@ -95,7 +95,8 @@ function MobileRow({
     onSelect,
     isAtm,
     highlightAtmStrike,
-    viewMode
+    viewMode,
+    rowRef
 }: {
     strike: number;
     call?: CompareRow;
@@ -109,6 +110,7 @@ function MobileRow({
     isAtm: boolean;
     highlightAtmStrike: boolean;
     viewMode: "COMPARE" | "BEST";
+    rowRef?: React.Ref<HTMLDivElement>;
 }) {
     const defaultVenue = venues[0] || "DERIBIT";
 
@@ -164,6 +166,24 @@ function MobileRow({
     const putBidFlash = usePriceFlash(putMerged.bid);
     const putAskFlash = usePriceFlash(putMerged.ask);
 
+    const handleStrikeSelect = React.useCallback(() => {
+        if (selectedSide === "C" && call) {
+            onSelect(call.contractKey, "C");
+            return;
+        }
+        if (selectedSide === "P" && put) {
+            onSelect(put.contractKey, "P");
+            return;
+        }
+        if (call) {
+            onSelect(call.contractKey, "C");
+            return;
+        }
+        if (put) {
+            onSelect(put.contractKey, "P");
+        }
+    }, [call, put, selectedSide, onSelect]);
+
     React.useEffect(() => {
         if (viewMode !== "BEST") {
             callPrevVenueRef.current = null;
@@ -197,7 +217,7 @@ function MobileRow({
     }, [putPrimaryVenue, putHasQuote, viewMode]);
 
     return (
-        <div className={`flex items-stretch border-b border-[#0d1520] hover:bg-[#0d1520] min-h-[44px] ${isGuidedStrike ? "relative z-[1] ring-2 ring-[#47b5ff] bg-[#10243a]/80 shadow-[0_0_20px_rgba(71,181,255,0.32)]" : isAtm ? "bg-[#0a1829]/50" : ""}`}>
+        <div ref={rowRef} className={`flex items-stretch border-b border-[#0d1520] hover:bg-[#0d1520] min-h-[44px] ${isGuidedStrike ? "relative z-[1] ring-2 ring-[#47b5ff] bg-[#10243a]/80 shadow-[0_0_20px_rgba(71,181,255,0.32)]" : isAtm ? "bg-[#0a1829]/50" : ""}`}>
             {/* CALLS */}
             <div
                 className={`flex-1 flex flex-col justify-center px-2 border-r border-[#1e2a3a] cursor-pointer ${isCallSelected ? "bg-[#1a2a4a]" : ""}`}
@@ -264,14 +284,17 @@ function MobileRow({
             </div>
 
             {/* STRIKE */}
-            <div className={`w-[80px] shrink-0 flex items-center justify-center font-mono font-bold text-[13px] ${isGuidedStrike
+            <div
+                className={`w-[80px] shrink-0 flex items-center justify-center font-mono font-bold text-[13px] cursor-pointer ${isGuidedStrike
                 ? "border-x border-[#47b5ff] text-[#8fd6ff] bg-[#0f2438]"
                 : isStrikeSelected
                     ? "border-x border-[#2f6ea9] text-[#7cc6ff] bg-[#112338]"
                     : isAtm
                         ? "border-r border-[#47b5ff] text-[#47b5ff] bg-[#0c1929]"
                         : "border-r border-[#1e2a3a] text-[#e0e8f0] bg-[#0a1018]"
-                }`}>
+                }`}
+                onClick={handleStrikeSelect}
+            >
                 {strike.toLocaleString()}
             </div>
 
@@ -364,9 +387,25 @@ export function MobileChainGrid({
 
     // Estimate ATM strike based on strikes center if no spot available, just keeping it simple for mobile MVP
     const atmStrike = strikes.length > 0 ? strikes[Math.floor(strikes.length / 2)] : null;
+    const guidedRowRef = React.useRef<HTMLDivElement | null>(null);
+    const didAutoScrollGuidedRef = React.useRef(false);
 
     const callMap = new Map(calls.map((c) => [c.strike, c]));
     const putMap = new Map(puts.map((p) => [p.strike, p]));
+
+    React.useEffect(() => {
+        if (!highlightAtmStrikeRow || loading || strikes.length === 0) {
+            didAutoScrollGuidedRef.current = false;
+            return;
+        }
+        if (didAutoScrollGuidedRef.current) return;
+        const node = guidedRowRef.current;
+        if (!node) return;
+        didAutoScrollGuidedRef.current = true;
+        requestAnimationFrame(() => {
+            node.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+    }, [highlightAtmStrikeRow, loading, strikes.length, selectedExpiry]);
 
     return (
         <div className="flex flex-col h-full w-full bg-[#060a10]">
@@ -417,6 +456,7 @@ export function MobileChainGrid({
                             isAtm={strike === atmStrike}
                             highlightAtmStrike={highlightAtmStrikeRow}
                             viewMode={viewMode}
+                            rowRef={highlightAtmStrikeRow && strike === atmStrike ? guidedRowRef : undefined}
                         />
                     ))
                 )}

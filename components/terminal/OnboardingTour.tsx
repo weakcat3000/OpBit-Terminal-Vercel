@@ -16,11 +16,20 @@ export interface OnboardingStep {
         | "center"
         | "top-center"
         | "top-center-low"
+        | "bottom-center"
         | "middle-right"
         | "middle-right-inset"
         | "middle-left"
         | "middle-center";
     cardSize?: "compact" | "regular";
+}
+
+function resolveMobilePlacement(stepId: string, fallback: OnboardingStep["cardPlacement"]): OnboardingStep["cardPlacement"] {
+    if (stepId === "welcome") return "center";
+    if (stepId === "topbar") return "top-center-low";
+    if (stepId === "chain") return "top-center";
+    if (stepId === "assistant") return "top-center";
+    return fallback ?? "bottom-center";
 }
 
 interface OnboardingTourProps {
@@ -80,20 +89,39 @@ export function OnboardingTour({
     onSkip,
     onFinish,
 }: OnboardingTourProps) {
+    const [isMobileViewport, setIsMobileViewport] = React.useState<boolean>(
+        typeof window !== "undefined" ? window.matchMedia("(max-width: 1023px)").matches : false
+    );
+    React.useEffect(() => {
+        if (typeof window === "undefined") return;
+        const media = window.matchMedia("(max-width: 1023px)");
+        const onChange = () => setIsMobileViewport(media.matches);
+        onChange();
+        if (typeof media.addEventListener === "function") {
+            media.addEventListener("change", onChange);
+            return () => media.removeEventListener("change", onChange);
+        }
+        media.addListener(onChange);
+        return () => media.removeListener(onChange);
+    }, []);
     if (!isOpen || steps.length === 0) return null;
 
     const current = steps[currentIndex] ?? steps[0];
     const isFirst = currentIndex === 0;
     const isLast = currentIndex >= steps.length - 1;
-    const placement = current.cardPlacement ?? "bottom-left";
-    const size = current.cardSize ?? "regular";
+    const placement = isMobileViewport
+        ? resolveMobilePlacement(current.id, current.cardPlacement)
+        : current.cardPlacement ?? "bottom-left";
+    const size = isMobileViewport ? "compact" : current.cardSize ?? "regular";
     const cardPlacementClass =
         placement === "center" || placement === "middle-center"
             ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             : placement === "top-center"
                 ? "top-4 left-1/2 -translate-x-1/2"
                 : placement === "top-center-low"
-                    ? "top-12 left-1/2 -translate-x-1/2"
+                    ? "top-[4.5rem] left-1/2 -translate-x-1/2"
+                : placement === "bottom-center"
+                    ? "bottom-[max(28px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
                 : placement === "middle-right"
                     ? "top-1/2 right-4 -translate-y-1/2"
                     : placement === "middle-right-inset"
@@ -109,8 +137,8 @@ export function OnboardingTour({
                         : placement === "bottom-right"
                             ? "bottom-4 right-4"
                             : "bottom-4 left-4";
-    const cardSizeClass = size === "compact" ? "w-[min(78vw,300px)]" : "w-[min(86vw,360px)]";
-    const bodyTextClass = size === "compact" ? "text-[11px] leading-relaxed" : "text-[12px] leading-relaxed";
+    const cardSizeClass = size === "compact" ? "w-[min(92vw,420px)]" : "w-[min(86vw,360px)]";
+    const bodyTextClass = size === "compact" ? "text-[10px] leading-relaxed" : "text-[12px] leading-relaxed";
     const cardAnimation = isFirst
         ? "opbit-onboarding-enter 420ms cubic-bezier(0.22,1,0.36,1) both, opbit-onboarding-float 4.2s ease-in-out 450ms infinite"
         : "opbit-onboarding-enter 260ms cubic-bezier(0.22,1,0.36,1) both";
@@ -132,7 +160,7 @@ export function OnboardingTour({
             <aside
                 key={current.id}
                 style={{ animation: cardAnimation }}
-                className={`pointer-events-auto absolute ${cardPlacementClass} ${cardSizeClass} rounded-sm border px-4 py-3 ${
+                className={`pointer-events-auto absolute ${cardPlacementClass} ${cardSizeClass} rounded-sm border px-4 py-3 max-h-[min(62dvh,520px)] overflow-y-auto ${
                     themeMode === "light"
                         ? "border-[#7ea8cf] bg-[#f4f8ff]/96 text-[#0f172a] shadow-[0_10px_40px_rgba(76,127,179,0.28)]"
                         : "border-[#2b4f7c] bg-[#071428]/94 text-[#d6e7f7] shadow-[0_10px_40px_rgba(28,88,153,0.36)]"

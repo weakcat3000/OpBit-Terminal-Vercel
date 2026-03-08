@@ -296,6 +296,7 @@ export default function TerminalPage() {
     const [analysisPanel, setAnalysisPanel] = useState<TabKey>("VOL");
     const [onboardingOpen, setOnboardingOpen] = useState(false);
     const [onboardingStepIndex, setOnboardingStepIndex] = useState(0);
+    const [onboardingGateReady, setOnboardingGateReady] = useState(false);
     const [mobileWelcomePending, setMobileWelcomePending] = useState(false);
     const [panopticConfirmOpen, setPanopticConfirmOpen] = useState(false);
     const [prefsHydrated, setPrefsHydrated] = useState(false);
@@ -401,8 +402,7 @@ export default function TerminalPage() {
             let shouldBlockOnMobile = false;
             try {
                 const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches;
-                const seenMobileWelcome = window.sessionStorage.getItem("opbit_mobile_welcome_seen");
-                shouldBlockOnMobile = isMobileViewport && !seenMobileWelcome;
+                shouldBlockOnMobile = isMobileViewport;
             } catch {
                 shouldBlockOnMobile = false;
             }
@@ -411,6 +411,7 @@ export default function TerminalPage() {
             setOnboardingStepIndex(0);
             setOnboardingOpen(true);
         }
+        setOnboardingGateReady(true);
     }, []);
 
     useEffect(() => {
@@ -1699,7 +1700,7 @@ export default function TerminalPage() {
             />
 
             <OnboardingTour
-                isOpen={onboardingOpen && !mobileWelcomePending}
+                isOpen={onboardingGateReady && onboardingOpen && !mobileWelcomePending}
                 steps={ONBOARDING_STEPS}
                 currentIndex={onboardingStepIndex}
                 themeMode={themeMode}
