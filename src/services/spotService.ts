@@ -8,6 +8,12 @@ interface BinanceTickerPrice {
     price: string;
 }
 
+interface CoinbaseSpotResponse {
+    data?: {
+        amount?: string;
+    };
+}
+
 interface YahooOptionChainResponse {
     optionChain?: {
         result?: Array<{
@@ -205,13 +211,30 @@ async function fetchBinanceSpots(symbols: string[]): Promise<Record<string, numb
     }
 
     const encoded = encodeURIComponent(JSON.stringify(quoteSymbols));
-    const data = await getJSON<BinanceTickerPrice[]>(
+    let data: BinanceTickerPrice[] | null = null;
+    const urls = [
         `https://api.binance.com/api/v3/ticker/price?symbols=${encoded}`,
-        {
-            throttleKey: "spot:binance",
-            minIntervalMs: 120,
+        `https://api.binance.us/api/v3/ticker/price?symbols=${encoded}`,
+    ];
+
+    for (const url of urls) {
+        try {
+            data = await getJSON<BinanceTickerPrice[]>(
+                url,
+                {
+                    throttleKey: "spot:binance",
+                    minIntervalMs: 120,
+                }
+            );
+            break;
+        } catch {
+            // Try next provider endpoint.
         }
-    );
+    }
+
+    if (!data) {
+        throw new Error("No Binance endpoint available for spot quotes");
+    }
 
     const result: Record<string, number | null> = {};
     for (const row of data) {
@@ -220,6 +243,26 @@ async function fetchBinanceSpots(symbols: string[]): Promise<Record<string, numb
     }
 
     return result;
+}
+
+async function fetchCoinbaseSpots(symbols: string[]): Promise<Record<string, number | null>> {
+    const out: Record<string, number | null> = {};
+    const supported = symbols.filter((s) => s === "BTC" || s === "ETH");
+    for (const symbol of supported) {
+        try {
+            const response = await getJSON<CoinbaseSpotResponse>(
+                `https://api.coinbase.com/v2/prices/${symbol}-USD/spot`,
+                {
+                    throttleKey: "spot:coinbase",
+                    minIntervalMs: 120,
+                }
+            );
+            out[symbol] = toNumber(response.data?.amount);
+        } catch {
+            out[symbol] = null;
+        }
+    }
+    return out;
 }
 
 async function fetchIbitSpot(): Promise<{ value: number | null; source: string; marketState: string | null }> {
@@ -244,12 +287,19 @@ export async function getSpots(symbols: string[]): Promise<SpotResponse> {
         const sources: Record<string, string> = {};
         const marketStates: Record<string, string | null> = {};
 
-        const binance = await fetchBinanceSpots(normalizedSymbols);
+        let primarySpots: Record<string, number | null> = {};
+        let primarySource = "binance";
+        try {
+            primarySpots = await fetchBinanceSpots(normalizedSymbols);
+        } catch {
+            primarySpots = await fetchCoinbaseSpots(normalizedSymbols);
+            primarySource = "coinbase";
+        }
 
         for (const symbol of normalizedSymbols) {
             if (symbol === "BTC" || symbol === "ETH") {
-                spots[symbol] = binance[symbol] ?? null;
-                sources[symbol] = "binance";
+                spots[symbol] = primarySpots[symbol] ?? null;
+                sources[symbol] = spots[symbol] != null ? primarySource : "unavailable";
                 marketStates[symbol] = null;
                 continue;
             }
