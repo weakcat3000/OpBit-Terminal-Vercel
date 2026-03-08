@@ -42,6 +42,8 @@ export interface MobileTerminalProps {
     arbOpen: boolean;
     onOpenArb: () => void;
     onCloseArb: () => void;
+    mobileWelcomePending: boolean;
+    onMobileWelcomeDismissed: () => void;
     onboardingOpen: boolean;
     highlightAtmStrikeRow?: boolean;
     focusTarget: "TOPBAR" | "CHAIN" | "ANALYSIS" | "STRATEGY" | "ASSISTANT" | null;
@@ -63,7 +65,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
     const analysisFocused = props.onboardingOpen && props.focusTarget === "ANALYSIS";
     const strategyFocused = props.onboardingOpen && props.focusTarget === "STRATEGY";
     const assistantFocused = props.onboardingOpen && props.focusTarget === "ASSISTANT";
-    const shouldShowMobileWelcome = showMobileWelcome && !props.onboardingOpen;
+    const shouldShowMobileWelcome = showMobileWelcome;
 
     const selectedRow = props.chainRows.find(r => r.contractKey === props.selectedKey) || null;
 
@@ -76,21 +78,8 @@ export function MobileTerminal(props: MobileTerminalProps) {
     }, [props.selectedKey]);
 
     React.useEffect(() => {
-        if (props.onboardingOpen) {
-            setShowMobileWelcome(false);
-            return;
-        }
-
-        try {
-            const seenKey = "opbit_mobile_welcome_seen";
-            const seen = window.sessionStorage.getItem(seenKey);
-            if (!seen) {
-                setShowMobileWelcome(true);
-            }
-        } catch {
-            setShowMobileWelcome(true);
-        }
-    }, [props.onboardingOpen]);
+        setShowMobileWelcome(props.mobileWelcomePending);
+    }, [props.mobileWelcomePending]);
 
     // Sync external focusTarget changes to activeTab (e.g. from Ask AI)
     React.useEffect(() => {
@@ -104,6 +93,16 @@ export function MobileTerminal(props: MobileTerminalProps) {
         if (tab === "CHARTS") props.onFocusTargetChange("ANALYSIS");
         else if (tab === "STRATEGY") props.onFocusTargetChange("STRATEGY");
         else if (tab === "CHAIN") props.onFocusTargetChange("CHAIN");
+    };
+
+    const dismissMobileWelcome = () => {
+        setShowMobileWelcome(false);
+        try {
+            window.sessionStorage.setItem("opbit_mobile_welcome_seen", "1");
+        } catch {
+            // Ignore storage failures and continue.
+        }
+        props.onMobileWelcomeDismissed();
     };
 
     return (
@@ -217,14 +216,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
             <div className={`fixed inset-0 z-[120] flex items-center justify-center px-4 transition-opacity duration-200 ${shouldShowMobileWelcome ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} role="dialog" aria-modal="true" aria-label="Mobile experience notice">
                 <div
                     className="absolute inset-0 bg-[#000000]/70 backdrop-blur-[2px]"
-                    onClick={() => {
-                        setShowMobileWelcome(false);
-                        try {
-                            window.sessionStorage.setItem("opbit_mobile_welcome_seen", "1");
-                        } catch {
-                            // Ignore storage failures and continue.
-                        }
-                    }}
+                    onClick={dismissMobileWelcome}
                 />
                 <div className="relative w-full max-w-[420px] rounded-lg border border-[#2a4a6a] bg-[#0d1117] px-4 py-4 shadow-[0_0_30px_rgba(71,181,255,0.18)]">
                     <div className="text-[11px] uppercase tracking-widest font-mono text-[#47b5ff]">Mobile Notice</div>
@@ -235,14 +227,7 @@ export function MobileTerminal(props: MobileTerminalProps) {
                     <div className="mt-4 flex justify-end">
                         <button
                             type="button"
-                            onClick={() => {
-                                setShowMobileWelcome(false);
-                                try {
-                                    window.sessionStorage.setItem("opbit_mobile_welcome_seen", "1");
-                                } catch {
-                                    // Ignore storage failures and continue.
-                                }
-                            }}
+                            onClick={dismissMobileWelcome}
                             className="rounded-sm border border-[#2f6ea9] bg-[#0d2642] px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider text-[#b9ddff] transition-colors hover:bg-[#113053] hover:border-[#3f81bf]"
                         >
                             Continue On Mobile

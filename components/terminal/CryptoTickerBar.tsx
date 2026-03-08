@@ -8,7 +8,11 @@ interface TickerItem {
     change24hPct: number;
 }
 
-export function CryptoTickerBar() {
+interface CryptoTickerBarProps {
+    mode?: "responsive" | "fixed" | "inline";
+}
+
+export function CryptoTickerBar({ mode = "responsive" }: CryptoTickerBarProps) {
     const [items, setItems] = useState<TickerItem[]>([]);
 
     // Ref keeping track of previous prices to trigger flash animations
@@ -66,7 +70,13 @@ export function CryptoTickerBar() {
         };
     }, []);
 
-    if (items.length === 0) return null;
+    const layoutClass =
+        mode === "fixed"
+            ? "fixed bottom-0 left-0 right-0"
+            : mode === "inline"
+                ? "relative"
+                : "relative lg:fixed lg:bottom-0 lg:left-0 lg:right-0";
+    const hasItems = items.length > 0;
 
     const renderItems = () => (
         items.map((item, idx) => {
@@ -106,7 +116,7 @@ export function CryptoTickerBar() {
     );
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 h-[20px] bg-[#080c14] border-t border-[#1e2a3a] overflow-hidden flex items-center z-50">
+        <div className={`${layoutClass} h-[20px] bg-[#080c14] border-t border-[#1e2a3a] overflow-hidden flex items-center z-50 shrink-0`}>
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @keyframes marquee {
@@ -121,8 +131,21 @@ export function CryptoTickerBar() {
                 }
             `}} />
             <div className="flex whitespace-nowrap animate-marquee w-max select-none">
-                {renderItems()}
-                {renderItems()}
+                {hasItems ? (
+                    <>
+                        {renderItems()}
+                        {renderItems()}
+                    </>
+                ) : (
+                    <>
+                        <div className="px-3 py-[1px] shrink-0 font-mono text-[10px] text-[#6f8092] uppercase tracking-[0.08em]">
+                            Loading market ticker...
+                        </div>
+                        <div className="px-3 py-[1px] shrink-0 font-mono text-[10px] text-[#6f8092] uppercase tracking-[0.08em]">
+                            Loading market ticker...
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

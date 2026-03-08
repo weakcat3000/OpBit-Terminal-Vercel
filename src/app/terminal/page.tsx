@@ -296,6 +296,7 @@ export default function TerminalPage() {
     const [analysisPanel, setAnalysisPanel] = useState<TabKey>("VOL");
     const [onboardingOpen, setOnboardingOpen] = useState(false);
     const [onboardingStepIndex, setOnboardingStepIndex] = useState(0);
+    const [mobileWelcomePending, setMobileWelcomePending] = useState(false);
     const [panopticConfirmOpen, setPanopticConfirmOpen] = useState(false);
     const [prefsHydrated, setPrefsHydrated] = useState(false);
     const [arbDrawerOpen, setArbDrawerOpen] = useState(false);
@@ -397,6 +398,16 @@ export default function TerminalPage() {
     useEffect(() => {
         const cookieValue = getCookieValue(ONBOARDING_COOKIE_NAME) ?? "";
         if (cookieValue !== ONBOARDING_COOKIE_VERSION) {
+            let shouldBlockOnMobile = false;
+            try {
+                const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches;
+                const seenMobileWelcome = window.sessionStorage.getItem("opbit_mobile_welcome_seen");
+                shouldBlockOnMobile = isMobileViewport && !seenMobileWelcome;
+            } catch {
+                shouldBlockOnMobile = false;
+            }
+
+            setMobileWelcomePending(shouldBlockOnMobile);
             setOnboardingStepIndex(0);
             setOnboardingOpen(true);
         }
@@ -463,6 +474,10 @@ export default function TerminalPage() {
         setFocusTarget(null);
         markOnboardingSeen();
     }, [markOnboardingSeen]);
+
+    const handleMobileWelcomeDismissed = useCallback(() => {
+        setMobileWelcomePending(false);
+    }, []);
 
     const handleOnboardingNext = useCallback(() => {
         setOnboardingStepIndex((prev) => {
@@ -1447,7 +1462,7 @@ export default function TerminalPage() {
     ]);
 
     return (
-        <div className={`terminal-shell flex flex-col bg-[#060a10] text-[#c0ccd8] h-screen overflow-hidden pb-[20px] ${themeMode === "light" ? "theme-light" : ""}`}>
+        <div className={`terminal-shell flex flex-col bg-[#060a10] text-[#c0ccd8] h-[100dvh] overflow-hidden pb-0 lg:pb-[20px] ${themeMode === "light" ? "theme-light" : ""}`}>
             {/* Desktop UI */}
             <div className="hidden lg:flex flex-col h-full w-full overflow-hidden">
                 <div
@@ -1600,7 +1615,7 @@ export default function TerminalPage() {
             </div>
 
             {/* Mobile UI */}
-            <div className="flex lg:hidden flex-col h-full w-full overflow-hidden relative z-40">
+            <div className="flex lg:hidden flex-col flex-1 min-h-0 w-full overflow-hidden relative">
                 <MobileTerminal
                     underlying={underlying}
                     onUnderlyingChange={handleUnderlyingChange}
@@ -1633,6 +1648,8 @@ export default function TerminalPage() {
                     arbOpen={arbDrawerOpen}
                     onOpenArb={() => setArbDrawerOpen(true)}
                     onCloseArb={() => setArbDrawerOpen(false)}
+                    mobileWelcomePending={mobileWelcomePending}
+                    onMobileWelcomeDismissed={handleMobileWelcomeDismissed}
                     onboardingOpen={onboardingOpen}
                     highlightAtmStrikeRow={onboardingOpen && onboardingCurrentStep.id === "chain"}
                     focusTarget={focusTarget}
@@ -1682,7 +1699,7 @@ export default function TerminalPage() {
             />
 
             <OnboardingTour
-                isOpen={onboardingOpen}
+                isOpen={onboardingOpen && !mobileWelcomePending}
                 steps={ONBOARDING_STEPS}
                 currentIndex={onboardingStepIndex}
                 themeMode={themeMode}

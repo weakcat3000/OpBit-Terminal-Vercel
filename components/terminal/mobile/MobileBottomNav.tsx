@@ -14,7 +14,7 @@ interface MobileBottomNavProps {
 
 export function MobileBottomNav({ activeTab, onChangeTab, onAssistantToggle, assistantHighlighted = false }: MobileBottomNavProps) {
     return (
-        <div className="flex items-center justify-between px-2 pb-5 pt-2 border-t border-[#1e2a3a] bg-[#0d1117] shrink-0 w-full z-10">
+        <div className="flex items-center justify-between px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+10px)] border-t border-[#1e2a3a] bg-[#0d1117] shrink-0 w-full z-10">
             <button
                 onClick={() => onChangeTab("CHAIN")}
                 className={`flex-1 flex flex-col items-center gap-1 ${activeTab === "CHAIN" ? "text-[#47b5ff]" : "text-[#5a6a7a]"}`}
