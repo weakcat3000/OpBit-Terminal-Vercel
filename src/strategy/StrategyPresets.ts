@@ -62,25 +62,109 @@ function nearestByTarget(
     return best;
 }
 
+function priceOrNull(value: number | null | undefined): number | null {
+    if (value == null || !Number.isFinite(value) || value < 0) return null;
+    return value;
+}
+
+interface LegQuoteCandidate {
+    venue: StrategyLeg["venue"];
+    bid: number | null;
+    ask: number | null;
+    mid: number | null;
+    avgBidAsk: number | null;
+    markIv: number | null;
+}
+
+function pickExecutionCandidate(
+    side: "BUY" | "SELL",
+    candidates: LegQuoteCandidate[]
+): LegQuoteCandidate | null {
+    if (candidates.length === 0) return null;
+
+    if (side === "BUY") {
+        const byAsk = candidates
+            .filter((c) => c.ask != null)
+            .sort((a, b) => (a.ask as number) - (b.ask as number));
+        if (byAsk.length > 0) return byAsk[0];
+
+        const byMid = candidates
+            .filter((c) => c.mid != null)
+            .sort((a, b) => (a.mid as number) - (b.mid as number));
+        if (byMid.length > 0) return byMid[0];
+
+        const byAlt = candidates
+            .map((c) => ({ c, value: c.avgBidAsk ?? c.bid }))
+            .filter((item) => item.value != null)
+            .sort((a, b) => (a.value as number) - (b.value as number));
+        return byAlt[0]?.c ?? null;
+    }
+
+    const byBid = candidates
+        .filter((c) => c.bid != null)
+        .sort((a, b) => (b.bid as number) - (a.bid as number));
+    if (byBid.length > 0) return byBid[0];
+
+    const byMid = candidates
+        .filter((c) => c.mid != null)
+        .sort((a, b) => (b.mid as number) - (a.mid as number));
+    if (byMid.length > 0) return byMid[0];
+
+    const byAlt = candidates
+        .map((c) => ({ c, value: c.avgBidAsk ?? c.ask }))
+        .filter((item) => item.value != null)
+        .sort((a, b) => (b.value as number) - (a.value as number));
+    return byAlt[0]?.c ?? null;
+}
+
 function rowToLeg(
     row: CompareRow,
     side: "BUY" | "SELL",
     underlying: string
 ): StrategyLeg {
-    const bestVenue = row.bestVenue ?? "DERIBIT";
-    const venueData = row.venues[bestVenue] ?? Object.values(row.venues)[0];
-    const mid = venueData?.mid ?? row.bestMidUsed ?? 0;
-    const iv = venueData?.markIv ?? null;
+    const candidates: LegQuoteCandidate[] = Object.entries(row.venues)
+        .map(([venueKey, quote]) => {
+            if (!quote) return null;
+            const bid = priceOrNull(quote.bid);
+            const ask = priceOrNull(quote.ask);
+            const avgBidAsk = bid != null && ask != null ? (bid + ask) / 2 : null;
+            const mid = priceOrNull(quote.mid) ?? avgBidAsk;
+            return {
+                venue: venueKey as StrategyLeg["venue"],
+                bid,
+                ask,
+                mid,
+                avgBidAsk,
+                markIv: quote.markIv ?? null,
+            } satisfies LegQuoteCandidate;
+        })
+        .filter((candidate): candidate is LegQuoteCandidate => candidate != null);
+
+    const executionCandidate = pickExecutionCandidate(side, candidates);
+    const fallbackVenue = (row.bestVenue ?? candidates[0]?.venue ?? "DERIBIT") as StrategyLeg["venue"];
+    const venue = executionCandidate?.venue ?? fallbackVenue;
+    const bid = executionCandidate?.bid ?? null;
+    const ask = executionCandidate?.ask ?? null;
+    const mid = executionCandidate?.mid ?? null;
+    const avgBidAsk = executionCandidate?.avgBidAsk ?? null;
+    const fallbackMid = priceOrNull(row.bestMidUsed);
+
+    // Current mark is neutral mark-to-market; entry is side-aware fill estimate.
+    const mark = mid ?? avgBidAsk ?? fallbackMid ?? ask ?? bid ?? 0;
+    const entryPrice = side === "BUY"
+        ? ask ?? mid ?? avgBidAsk ?? bid ?? fallbackMid ?? 0
+        : bid ?? mid ?? avgBidAsk ?? ask ?? fallbackMid ?? 0;
+    const iv = executionCandidate?.markIv ?? null;
     const normalizedIv = iv != null ? (iv > 3 ? iv / 100 : iv) : null;
 
     return {
         id: makeId(),
         contractKey: row.contractKey,
-        venue: bestVenue,
+        venue,
         side,
         quantity: 1,
-        entryPrice: mid,
-        currentMark: mid,
+        entryPrice,
+        currentMark: mark,
         strike: row.strike,
         type: row.right === "C" ? "CALL" : "PUT",
         expiry: row.expiry,

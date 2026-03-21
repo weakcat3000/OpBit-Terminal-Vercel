@@ -30,11 +30,40 @@ const DEFAULT_SCENARIO: StrategyScenario = {
     daysForward: 0,
 };
 
+function normalizeLoadedLegPricing(legs: StrategyLeg[]): { legs: StrategyLeg[]; changed: boolean } {
+    let changed = false;
+    const normalized = legs.map((leg) => {
+        const validEntry = Number.isFinite(leg.entryPrice) && leg.entryPrice >= 0;
+        const validMark = leg.currentMark != null && Number.isFinite(leg.currentMark) && leg.currentMark >= 0;
+
+        if (validEntry && (leg.entryPrice > 0 || !validMark || leg.currentMark === 0)) {
+            return leg;
+        }
+
+        if (validMark) {
+            changed = true;
+            return { ...leg, entryPrice: leg.currentMark as number };
+        }
+
+        return leg;
+    });
+
+    return { legs: normalized, changed };
+}
+
 function loadLegsFromStorage(): StrategyLeg[] {
     if (typeof window === "undefined") return [];
     try {
         const raw = localStorage.getItem("opbit-strategy-legs");
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            const normalized = normalizeLoadedLegPricing(parsed as StrategyLeg[]);
+            if (normalized.changed) {
+                localStorage.setItem("opbit-strategy-legs", JSON.stringify(normalized.legs));
+            }
+            return normalized.legs;
+        }
     } catch { /* ignore */ }
     return [];
 }

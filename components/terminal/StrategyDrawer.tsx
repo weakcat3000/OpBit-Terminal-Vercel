@@ -71,6 +71,7 @@ export function StrategyDrawer({
     const clearAll = useStrategyBuilderStore((s) => s.clearAll);
 
     const [activePreset, setActivePreset] = useState<StrategyPresetKey | null>(null);
+    const [chartMode, setChartMode] = useState<"profit" | "payoff">("profit");
 
     const panelMode: "none" | "strategy" | "arb" = strategyDrawerOpen
         ? "strategy"
@@ -95,7 +96,12 @@ export function StrategyDrawer({
         for (const leg of legs) {
             if (leg.currentMark == null) continue;
             const sign = leg.side === "BUY" ? 1 : -1;
-            total += sign * (leg.currentMark - leg.entryPrice) * leg.multiplier * leg.quantity;
+            const entry = Number.isFinite(leg.entryPrice) ? leg.entryPrice : 0;
+            const mark = Number.isFinite(leg.currentMark) ? leg.currentMark : null;
+            if (mark == null) continue;
+            const multiplier = Number.isFinite(leg.multiplier) && leg.multiplier > 0 ? leg.multiplier : 1;
+            const quantity = Number.isFinite(leg.quantity) && leg.quantity > 0 ? leg.quantity : 0;
+            total += sign * (mark - entry) * multiplier * quantity;
         }
         return total;
     }, [legs]);
@@ -265,10 +271,36 @@ export function StrategyDrawer({
                                 </div>
 
                                 <div className="border-b border-[#1e2a3a] py-2">
-                                    <div className="px-3 mb-1 text-[8px] text-[#5a6a7a] uppercase tracking-wider">
-                                        Payoff at Expiry
+                                    <div className="px-3 mb-1 flex items-center justify-between">
+                                        <span className="text-[8px] text-[#5a6a7a] uppercase tracking-wider">
+                                            {chartMode === "profit" ? "Profit at Expiry" : "Payoff at Expiry"}
+                                        </span>
+                                        <div className="flex items-center bg-[#0d1520] rounded border border-[#1e2a3a] overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={() => setChartMode("payoff")}
+                                                className={`px-2 py-0.5 text-[8px] uppercase tracking-wider transition-colors ${
+                                                    chartMode === "payoff"
+                                                        ? "text-[#39d5ff] bg-[#39d5ff]/10"
+                                                        : "text-[#5a6a7a] hover:text-[#8b9bab]"
+                                                }`}
+                                            >
+                                                Payoff
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setChartMode("profit")}
+                                                className={`px-2 py-0.5 text-[8px] uppercase tracking-wider transition-colors ${
+                                                    chartMode === "profit"
+                                                        ? "text-[#39d5ff] bg-[#39d5ff]/10"
+                                                        : "text-[#5a6a7a] hover:text-[#8b9bab]"
+                                                }`}
+                                            >
+                                                Profit
+                                            </button>
+                                        </div>
                                     </div>
-                                    <PayoffChart legs={legs} spot={spot} scenario={scenario} themeMode={themeMode} />
+                                    <PayoffChart legs={legs} spot={spot} scenario={scenario} themeMode={themeMode} chartMode={chartMode} />
                                 </div>
 
                                 <div className="border-b border-[#1e2a3a]">

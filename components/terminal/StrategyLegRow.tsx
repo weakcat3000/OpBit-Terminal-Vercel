@@ -23,13 +23,15 @@ export function StrategyLegRow({ leg }: { leg: StrategyLeg }) {
     const updateLeg = useStrategyBuilderStore((s) => s.updateLeg);
     const removeLeg = useStrategyBuilderStore((s) => s.removeLeg);
 
-    const pnl =
-        leg.currentMark != null
-            ? (leg.side === "BUY" ? 1 : -1) *
-            (leg.currentMark - leg.entryPrice) *
-            leg.multiplier *
-            leg.quantity
-            : null;
+    const pnl = (() => {
+        if (leg.currentMark == null || !Number.isFinite(leg.currentMark)) return null;
+        const entry = Number.isFinite(leg.entryPrice) ? leg.entryPrice : 0;
+        const multiplier = Number.isFinite(leg.multiplier) && leg.multiplier > 0 ? leg.multiplier : 1;
+        const quantity = Number.isFinite(leg.quantity) && leg.quantity > 0 ? leg.quantity : 0;
+        const sign = leg.side === "BUY" ? 1 : -1;
+        const value = sign * (leg.currentMark - entry) * multiplier * quantity;
+        return Number.isFinite(value) ? value : null;
+    })();
 
     const isBuy = leg.side === "BUY";
 
