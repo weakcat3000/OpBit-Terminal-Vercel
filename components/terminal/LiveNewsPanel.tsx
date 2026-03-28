@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Panel } from "../ui/Panel";
 
 interface LiveNewsItem {
@@ -19,7 +19,7 @@ interface LiveNewsResponse {
     updatedAt: number;
     underlying: string;
     items: LiveNewsItem[];
-    status?: "ok" | "degraded" | "down";
+    status?: "ok" | "down";
     reason?: string;
 }
 
@@ -42,7 +42,7 @@ function relativeTime(timestamp: string): string {
 
 export function LiveNewsPanel({ underlying }: LiveNewsPanelProps) {
     const [items, setItems] = useState<LiveNewsItem[]>([]);
-    const [status, setStatus] = useState<"ok" | "degraded" | "down">("ok");
+    const [status, setStatus] = useState<"ok" | "down">("ok");
     const [reason, setReason] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -57,9 +57,16 @@ export function LiveNewsPanel({ underlying }: LiveNewsPanelProps) {
                 });
                 const data: LiveNewsResponse = await res.json();
                 if (!mounted) return;
-                setItems(data.items ?? []);
-                setStatus(data.status ?? "ok");
-                setReason(data.reason ?? null);
+                const nextItems = data.items ?? [];
+                setItems(nextItems);
+                if (nextItems.length > 0) {
+                    setStatus("ok");
+                    setReason(null);
+                } else {
+                    const isDown = data.status === "down";
+                    setStatus(isDown ? "down" : "ok");
+                    setReason(isDown ? (data.reason ?? "Unable to load live headlines") : null);
+                }
             } catch {
                 if (!mounted) return;
                 setItems([]);
@@ -78,12 +85,6 @@ export function LiveNewsPanel({ underlying }: LiveNewsPanelProps) {
         };
     }, [underlying]);
 
-    const statusTone = useMemo(() => {
-        if (status === "down") return "text-[#ff6b6b] border-[#6b2228] bg-[#2a1116]";
-        if (status === "degraded") return "text-[#ffcc66] border-[#684f1d] bg-[#2a2110]";
-        return "text-[#61f2b3] border-[#1c5642] bg-[#0f271f]";
-    }, [status]);
-
     return (
         <Panel title="Live News" className="flex-1 min-h-0 flex flex-col" noPad>
             <div className="px-2 py-1 border-b border-[#1e2a3a] bg-gradient-to-r from-[#0d1622] to-[#0b131f]">
@@ -92,17 +93,7 @@ export function LiveNewsPanel({ underlying }: LiveNewsPanelProps) {
                     <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8fb7db] truncate">
                         {underlying} Headlines
                     </span>
-                    {status !== "ok" && (
-                        <span className={`text-[9px] uppercase px-1.5 py-0.5 border rounded-sm ${statusTone}`}>
-                            {status}
-                        </span>
-                    )}
                 </div>
-                {reason && (
-                    <div className="mt-1 text-[9px] text-[#b0c6de] truncate">
-                        {reason}
-                    </div>
-                )}
             </div>
 
             <div className="news-scroll flex-1 min-h-0 overflow-y-scroll overscroll-contain p-1 space-y-1 pr-1.5">
@@ -119,7 +110,9 @@ export function LiveNewsPanel({ underlying }: LiveNewsPanelProps) {
                     ))
                 ) : items.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-center text-[10px] text-[#58708a] px-3">
-                        No live articles yet. Add `NEWSAPI_KEY` in `.env.local` and refresh.
+                        {status === "down" && reason
+                            ? reason
+                            : "No live articles available right now. Please refresh shortly."}
                     </div>
                 ) : (
                     items.map((item) => {

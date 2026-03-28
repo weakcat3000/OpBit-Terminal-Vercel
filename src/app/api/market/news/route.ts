@@ -645,31 +645,16 @@ export async function GET(request: NextRequest) {
         const freeCryptoItems = sources[2].status === "fulfilled" ? sources[2].value : [];
         const rssFallbackItems = sources[3].status === "fulfilled" ? sources[3].value : [];
 
-        let status: "ok" | "degraded" | "down" = "ok";
+        let status: "ok" | "down" = "ok";
         let reason: string | undefined;
 
-        const freeFailed = sources[2].status === "rejected";
-        const rssFailed = sources[3].status === "rejected";
         const anyFeedAvailable =
             cryptoApiItems.length > 0 ||
             politicsItems.length > 0 ||
             freeCryptoItems.length > 0 ||
             rssFallbackItems.length > 0;
 
-        if (!env.newsApiKey && anyFeedAvailable) {
-            status = "degraded";
-            reason = "NEWSAPI_KEY missing; using fallback feed only";
-        } else if ((freeFailed || rssFailed) && (cryptoApiItems.length > 0 || politicsItems.length > 0)) {
-            status = "degraded";
-            reason = "Fallback crypto feed unavailable";
-        } else if (
-            cryptoApiItems.length === 0 &&
-            politicsItems.length === 0 &&
-            (freeCryptoItems.length > 0 || rssFallbackItems.length > 0)
-        ) {
-            status = "degraded";
-            reason = "Primary news provider unavailable; using RSS fallback";
-        } else if (!anyFeedAvailable) {
+        if (!anyFeedAvailable) {
             status = "down";
             reason = "All news feeds unavailable";
         }
