@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getJSON } from "@/src/core/utils/http";
+import { fetchWithRetry, getJSON } from "@/src/core/utils/http";
 import { TTLCache } from "@/src/core/utils/cache";
 import { env } from "@/src/core/config/env";
 
@@ -174,6 +174,15 @@ const BREAKING_IMPACT_TERMS = [
     "etf outflow",
 ];
 
+const RSS_ACCEPT_HEADER = "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5";
+
+interface RssSourceConfig {
+    key: string;
+    sourceName: string;
+    sourceUrl: string;
+    url: string;
+}
+
 function normalizeUnderlying(raw: string | null): Underlying {
     const value = (raw ?? "BTC").trim().toUpperCase();
     if (value === "ETH") return "ETH";
@@ -331,6 +340,58 @@ function normalizeFreeArticle(article: FreeCryptoArticle, index: number): LiveNe
     };
 }
 
+function decodeXmlEntities(raw: string): string {
+    return raw
+        .replace(/<!\[CDATA\[/g, "")
+        .replace(/\]\]>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, "\"")
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ");
+}
+
+function stripHtmlTags(raw: string): string {
+    return raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function extractXmlTag(block: string, tagName: string): string | null {
+    const pattern = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "i");
+    const match = block.match(pattern);
+    if (!match?.[1]) return null;
+    return decodeXmlEntities(match[1]).trim();
+}
+
+function normalizeRssArticle(itemBlock: string, index: number, sourcePrefix: string, fallbackSourceName: string): LiveNewsItem | null {
+    const title = stripHtmlTags(extractXmlTag(itemBlock, "title") ?? "");
+    const publishedAtRaw = extractXmlTag(itemBlock, "pubDate") ?? extractXmlTag(itemBlock, "published") ?? "";
+    if (!title || !publishedAtRaw) return null;
+
+    const parsedMs = Date.parse(publishedAtRaw);
+    if (!Number.isFinite(parsedMs)) return null;
+
+    const description = stripHtmlTags(extractXmlTag(itemBlock, "description") ?? extractXmlTag(itemBlock, "content:encoded") ?? "");
+    const sourceUrl = (extractXmlTag(itemBlock, "link") ?? "").trim() || null;
+    const sourceName = stripHtmlTags(extractXmlTag(itemBlock, "source") ?? fallbackSourceName).trim() || fallbackSourceName;
+    const text = `${title} ${description}`.toLowerCase();
+    const symbols: string[] = [];
+    if (/\bbitcoin\b|\bbtc\b/.test(text)) symbols.push("BTC");
+    if (/\bethereum\b|\beth\b/.test(text)) symbols.push("ETH");
+    if (/\bibit\b|\bblackrock\b|\bishares\b/.test(text)) symbols.push("IBIT");
+
+    return {
+        id: `${sourcePrefix}-${index}-${parsedMs}`,
+        title,
+        description,
+        publishedAt: new Date(parsedMs).toISOString(),
+        sourceName,
+        sourceUrl,
+        imageUrl: null,
+        symbols,
+    };
+}
+
 function canonicalTitle(title: string): string {
     return title.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -388,6 +449,72 @@ function cryptoQueryFor(underlying: Underlying): string {
     return "(bitcoin OR BTC OR crypto OR cryptocurrency OR \"spot bitcoin etf\" OR IBIT)";
 }
 
+function googleNewsQueryFor(underlying: Underlying): string {
+    if (underlying === "ETH") {
+        return "ethereum OR ETH OR defi OR staking when:2d";
+    }
+    if (underlying === "IBIT") {
+        return "IBIT OR iShares Bitcoin Trust OR BlackRock OR spot bitcoin etf when:3d";
+    }
+    return "bitcoin OR BTC OR IBIT OR spot bitcoin etf when:2d";
+}
+
+function rssSourcesFor(underlying: Underlying): RssSourceConfig[] {
+    const googleQuery = encodeURIComponent(googleNewsQueryFor(underlying));
+    return [
+        {
+            key: `google-news-rss:${underlying}`,
+            sourceName: "Google News",
+            sourceUrl: "https://news.google.com",
+            url: `https://news.google.com/rss/search?q=${googleQuery}&hl=en-US&gl=US&ceid=US:en`,
+        },
+        {
+            key: "cointelegraph-rss",
+            sourceName: "Cointelegraph",
+            sourceUrl: "https://cointelegraph.com",
+            url: "https://cointelegraph.com/rss",
+        },
+    ];
+}
+
+async function fetchRssFallbackNews(underlying: Underlying, limit: number): Promise<LiveNewsItem[]> {
+    const feeds = rssSourcesFor(underlying);
+    const settled = await Promise.allSettled(
+        feeds.map(async (feed) => {
+            const response = await fetchWithRetry(
+                feed.url,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: RSS_ACCEPT_HEADER,
+                    },
+                },
+                {
+                    throttleKey: feed.key,
+                    minIntervalMs: 250,
+                    timeoutMs: 5000,
+                    maxRetries: 1,
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`RSS HTTP ${response.status}: ${feed.url}`);
+            }
+
+            const xml = await response.text();
+            const itemBlocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
+
+            return itemBlocks
+                .map((block, index) => normalizeRssArticle(block, index, feed.key, feed.sourceName))
+                .filter((item): item is LiveNewsItem => item != null);
+        })
+    );
+
+    return settled
+        .flatMap((result) => (result.status === "fulfilled" ? result.value : []))
+        .slice(0, Math.max(30, limit * 2));
+}
+
 async function fetchNewsApiCrypto(underlying: Underlying, limit: number): Promise<LiveNewsItem[]> {
     if (!env.newsApiKey) return [];
     if (Date.now() < newsApiBackoffUntilMs) return [];
@@ -404,6 +531,8 @@ async function fetchNewsApiCrypto(underlying: Underlying, limit: number): Promis
                 headers: { "X-Api-Key": env.newsApiKey },
                 throttleKey: `newsapi:crypto:${underlying}`,
                 minIntervalMs: 350,
+                timeoutMs: 6000,
+                maxRetries: 1,
             }
         );
 
@@ -441,6 +570,8 @@ async function fetchNewsApiMajorPolitical(limit: number): Promise<LiveNewsItem[]
                 headers: { "X-Api-Key": env.newsApiKey },
                 throttleKey: "newsapi:politics",
                 minIntervalMs: 450,
+                timeoutMs: 6000,
+                maxRetries: 1,
             }
         );
 
@@ -476,6 +607,8 @@ async function fetchFreeCryptoNews(underlying: Underlying, limit: number): Promi
         {
             throttleKey: `free-crypto-news:${underlying}`,
             minIntervalMs: 250,
+            timeoutMs: 5000,
+            maxRetries: 1,
         }
     );
 
@@ -504,33 +637,44 @@ export async function GET(request: NextRequest) {
             fetchNewsApiCrypto(underlying, limit),
             fetchNewsApiMajorPolitical(limit),
             fetchFreeCryptoNews(underlying, limit),
+            fetchRssFallbackNews(underlying, limit),
         ]);
 
         const cryptoApiItems = sources[0].status === "fulfilled" ? sources[0].value : [];
         const politicsItems = sources[1].status === "fulfilled" ? sources[1].value : [];
         const freeCryptoItems = sources[2].status === "fulfilled" ? sources[2].value : [];
+        const rssFallbackItems = sources[3].status === "fulfilled" ? sources[3].value : [];
 
         let status: "ok" | "degraded" | "down" = "ok";
         let reason: string | undefined;
 
         const freeFailed = sources[2].status === "rejected";
+        const rssFailed = sources[3].status === "rejected";
         const anyFeedAvailable =
             cryptoApiItems.length > 0 ||
             politicsItems.length > 0 ||
-            freeCryptoItems.length > 0;
+            freeCryptoItems.length > 0 ||
+            rssFallbackItems.length > 0;
 
         if (!env.newsApiKey && anyFeedAvailable) {
             status = "degraded";
-            reason = "NEWSAPI_KEY missing; using free crypto feed only";
-        } else if (freeFailed && (cryptoApiItems.length > 0 || politicsItems.length > 0)) {
+            reason = "NEWSAPI_KEY missing; using fallback feed only";
+        } else if ((freeFailed || rssFailed) && (cryptoApiItems.length > 0 || politicsItems.length > 0)) {
             status = "degraded";
             reason = "Fallback crypto feed unavailable";
+        } else if (
+            cryptoApiItems.length === 0 &&
+            politicsItems.length === 0 &&
+            (freeCryptoItems.length > 0 || rssFallbackItems.length > 0)
+        ) {
+            status = "degraded";
+            reason = "Primary news provider unavailable; using RSS fallback";
         } else if (!anyFeedAvailable) {
             status = "down";
             reason = "All news feeds unavailable";
         }
 
-        const basePool = dedupe([...cryptoApiItems, ...politicsItems, ...freeCryptoItems])
+        const basePool = dedupe([...cryptoApiItems, ...politicsItems, ...freeCryptoItems, ...rssFallbackItems])
             .filter((item) => !isLowSignal(item))
             .filter((item) => isCryptoRelevant(item) || isMajorPolitical(item));
 
