@@ -1707,9 +1707,9 @@ export default function TerminalPage() {
                 nextDisabled={onboardingNextDisabled}
                 nextHint={
                     onboardingNeedsContractSelection
-                        ? "Select the highlighted contract row to continue."
+                        ? "Click the highlighted contract row now, then press Next."
                         : onboardingNeedsPresetSelection
-                            ? "Select at least one preset to continue."
+                            ? "Click at least one highlighted preset now, then press Next."
                             : undefined
                 }
                 onNext={handleOnboardingNext}

@@ -154,6 +154,7 @@ export function OnboardingTour({
         ? "opbit-onboarding-enter 420ms cubic-bezier(0.22,1,0.36,1) both, opbit-onboarding-float 4.2s ease-in-out 450ms infinite"
         : "opbit-onboarding-enter 260ms cubic-bezier(0.22,1,0.36,1) both";
     const strategyFocusStep = current.id === "strategy";
+    const actionRequired = !isLast && nextDisabled && Boolean(nextHint);
 
     return (
         <>
@@ -266,20 +267,43 @@ export function OnboardingTour({
                                 type="button"
                                 onClick={onNext}
                                 disabled={nextDisabled}
-                                className={`rounded-sm border px-2.5 py-1 text-[10px] font-mono disabled:opacity-45 disabled:cursor-not-allowed ${
-                                    themeMode === "light"
-                                        ? "border-[#3f7fbe] bg-[#dbeafe] text-[#124d85]"
-                                        : "border-[#2f6ea9] bg-[#10355f] text-[#cde8ff]"
+                                className={`rounded-sm border px-2.5 py-1 text-[10px] font-mono disabled:cursor-not-allowed ${
+                                    actionRequired
+                                        ? themeMode === "light"
+                                            ? "border-[#c5831f] bg-[#fff3dc] text-[#8a4f00] disabled:opacity-100"
+                                            : "border-[#8e5f17] bg-[#36230a] text-[#ffd18a] disabled:opacity-100"
+                                        : themeMode === "light"
+                                            ? "border-[#3f7fbe] bg-[#dbeafe] text-[#124d85] disabled:opacity-45"
+                                            : "border-[#2f6ea9] bg-[#10355f] text-[#cde8ff] disabled:opacity-45"
                                 }`}
                             >
-                                Next
+                                {actionRequired ? "Action Required" : "Next"}
                             </button>
                         )}
                     </div>
                 </div>
-                {!isLast && nextDisabled && nextHint && (
-                    <div className={`mt-2 text-[10px] font-mono ${themeMode === "light" ? "text-[#b45309]" : "text-[#f5be6f]"}`}>
-                        {nextHint}
+                {actionRequired && nextHint && (
+                    <div
+                        className={`mt-2 rounded-sm border px-2.5 py-2 animate-pulse ${
+                            themeMode === "light"
+                                ? "border-[#d89d3f] bg-[#fff4df]"
+                                : "border-[#7f5818] bg-[#2a1b09]"
+                        }`}
+                    >
+                        <div
+                            className={`text-[9px] font-mono uppercase tracking-[0.13em] ${
+                                themeMode === "light" ? "text-[#9b5f10]" : "text-[#ffc67d]"
+                            }`}
+                        >
+                            Action Required
+                        </div>
+                        <div
+                            className={`mt-1 text-[10px] font-mono font-semibold ${
+                                themeMode === "light" ? "text-[#8a4f00]" : "text-[#ffd18a]"
+                            }`}
+                        >
+                            {nextHint}
+                        </div>
                     </div>
                 )}
             </aside>
