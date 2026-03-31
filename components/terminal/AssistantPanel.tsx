@@ -410,7 +410,7 @@ export function AssistantPanel({
                             value={input}
                             onChange={(event) => setInput(event.target.value)}
                             placeholder="Ask about OpBit, IV, Greeks, or /strategy..."
-                            className={`w-full bg-transparent text-[12px] outline-none ${themeMode === "light" ? "text-[#0f172a] placeholder:text-[#1f67ad]" : "text-[#d6e7f7] placeholder:text-[#53708c]"
+                            className={`w-full bg-transparent text-[16px] lg:text-[12px] outline-none ${themeMode === "light" ? "text-[#0f172a] placeholder:text-[#1f67ad]" : "text-[#d6e7f7] placeholder:text-[#53708c]"
                                 }`}
                         />
                         <button
